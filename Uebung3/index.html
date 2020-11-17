@@ -77,41 +77,59 @@
 
     class ShaderProgram {
         constructor(gl, vsSource, fsSource) {
-            this.program = createProgram(vsSource, fsSource);
+            function createShader(gl, type, source) {
+                var shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                return shader;
+            };
+
+            function createProgram(gl, vsSource, fsSource) {
+                var vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+                var fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+                if (vs && fs) {
+                    var program = gl.createProgram();
+                    gl.attachShader(program, vs);
+                    gl.attachShader(program, fs);
+                    gl.linkProgram(program);
+
+                    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                        console.warn("Could not	link program: " + gl.getProgramInfoLog(program));
+                        return null;
+                    }
+                    return program;
+                }
+                return null;
+            };
+
+            this.gl = gl;
+            this.program = createProgram(gl, vsSource, fsSource);
         }
 
-        SetActive(gl, bActive) {
-            if (bActive) {
+        Destroy() {
+            var shaders = this.gl.getAttachedShaders(this.program);
+            for (var i = 0; i < shaders.length; ++i) {
+                var shader = shaders[i];
+                gl.detachShader(this.program, shader);
+                gl.deleteShader(shader);
+            }
+            gl.deleteProgram(this.shaderProgram);
+        }
 
+        GetAttrLoc(attrName) {
+            return this.gl.getAttribLocation(this.program, attrName);
+        }
+
+        SetActive(bActive) {
+            if (bActive) {
+                this.gl.useProgram(this.program)
+            } else {
+                console.log("Not yet implemented");
             }
         }
     }
 
-    function createShader(gl, type, source) {
-        var shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        return shader;
-    };
-
-    function createProgram(gl, vsSource, fsSource) {
-        var vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
-        var fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
-
-        if (vs && fs) {
-            var program = gl.createProgram();
-            gl.attachShader(program, vs);
-            gl.attachShader(program, fs);
-            gl.linkProgram(program);
-
-            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                console.warn("Could not	link program: " + gl.getProgramInfoLog(program));
-                return null;
-            }
-            return program;
-        }
-        return null;
-    };
 
     // depth
     gl.depthFunc(gl.LEQUAL);
@@ -127,8 +145,8 @@
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     // shader program
-    var shaderProgram = createProgram(gl, vertexShaderSource, fragmentShaderSource)
-    gl.useProgram(shaderProgram);
+    var shaderProgram = new ShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
+    shaderProgram.SetActive(true);
 
     // vertex buffer
     var vertices = [
@@ -140,7 +158,7 @@
         gl.ARRAY_BUFFER,
         new Float32Array(vertices),
         gl.STATIC_DRAW,
-        gl.getAttribLocation(shaderProgram, "pos"),
+        shaderProgram.GetAttrLoc("pos"),
         gl.FLOAT, 2);
 
     var colors = [
@@ -152,7 +170,7 @@
         gl.ARRAY_BUFFER,
         new Float32Array(colors),
         gl.STATIC_DRAW,
-        gl.getAttribLocation(shaderProgram, "color"),
+        shaderProgram.GetAttrLoc("color"),
         gl.FLOAT, 3);
 
 
@@ -193,7 +211,7 @@
         gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
     };
 
-    function main() {
+    (function main() {
         init();
 
         (function animate() {
@@ -201,9 +219,7 @@
             render();
             requestAnimationFrame(animate);
         })();
-    };
-
-    main();
+    })();
 
 
     // shutdown
@@ -211,14 +227,7 @@
     //     // release buffers
     //     posBuffer.Destroy();
     //     indexBuffer.Destroy();
-
-    //     var shaders = gl.getAttachedShaders(shaderProgram);
-    //     for (var i = 0; i < shaders.length; ++i) {
-    //         var shader = shaders[i];
-    //         gl.detachShader(shaderProgram, shader);
-    //         gl.deleteShader(shader);
-    //     }
-    //     gl.deleteProgram(shaderProgram);
+    //     shaderProgram.Destroy();
     // }
 
 </script>
