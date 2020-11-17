@@ -10,12 +10,12 @@
 <script id="vertexShader" type="notjs">
     attribute vec4 pos;
     attribute vec3 color;
+    uniform vec4 mandatoryUniformForTheTaskThatIDontActuallyNeedButHereItIsAnwaysSoHowLongCanVariableNamesBeAnywaysAhISeeWayTooLongThen;
     varying vec3 vColor;
     void main() {
         vColor = color;
         gl_Position = vec4(pos);
     }
-   
 </script>
 
 <script id="fragmentShader" type="notjs">
@@ -29,35 +29,32 @@
     void main() {
         gl_FragColor = vec4(vColor, 1.0);
     }
-   
 </script>
 
 <script>
-    var canvas = document.getElementById('c');
-    var gl = canvas.getContext('webgl', { alpha: true, depth: true });
-    var vertexShaderSource = document.querySelector("#vertexShader").text;
-    var fragmentShaderSource = document.querySelector("#fragmentShader").text;
-
     class ConstantBuffer {
-        constructor(gl, type, data, usage, attribLoc, attribType, attribByteLen) {
+        constructor(gl, type, data, usage, attribLoc, attribType, attribLen) {
             this.gl = gl;
             this.type = type;
             this.data = data;
             this.usage = usage;
 
             this.attribType = attribType;
-            this.attribByteLen = attribByteLen;
+            this.attribLen = attribLen;
             this.attribLoc = attribLoc
 
             this.buffer = gl.createBuffer();
-            gl.bindBuffer(type, this.buffer);
-            gl.bufferData(type, data, usage);
+            this.Update(type, data, usage);
         }
 
         // why the fuck are there no destructors in javascript
         Destroy() {
             gl.deleteBuffer(this.buffer);
-            // gl.disableVertexAttribArray(this.attribLoc);
+        }
+
+        Update(type, data, usage) {
+            gl.bindBuffer(type, this.buffer);
+            gl.bufferData(type, data, usage);
         }
 
         Bind() {
@@ -66,7 +63,7 @@
         }
 
         EnableInputLayout() {
-            gl.vertexAttribPointer(this.attribLoc, this.attribByteLen, this.attribType, false, 0, 0);
+            gl.vertexAttribPointer(this.attribLoc, this.attribLen, this.attribType, false, 0, 0);
             gl.enableVertexAttribArray(this.attribLoc);
         }
 
@@ -126,62 +123,61 @@
                 this.gl.useProgram(this.program)
             } else {
                 console.log("Not yet implemented");
+                // is deactivation necessary for these? 
+                // will see later on i spose
             }
         }
     }
 
+    class GameObject {
+        constructor(gl, vertices, colors, indices) {
+            this.gl = gl;
+            this.posBuffer = new ConstantBuffer(gl,
+                gl.ARRAY_BUFFER,
+                new Float32Array(vertices),
+                gl.STATIC_DRAW,
+                0, // "pos"
+                gl.FLOAT, 2);
 
-    // depth
-    gl.depthFunc(gl.LEQUAL);
-    gl.enable(gl.DEPTH_TEST);
-    gl.clearDepth(1.0);
-    gl.depthMask(true);
+            this.colBuffer = new ConstantBuffer(gl,
+                gl.ARRAY_BUFFER,
+                new Float32Array(colors),
+                gl.STATIC_DRAW,
+                1, // "color"
+                gl.FLOAT, 3);
 
-    // color
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    gl.colorMask(true, true, true, true);
+            this.indexBuffer = new ConstantBuffer(gl,
+                gl.ELEMENT_ARRAY_BUFFER,
+                new Uint16Array(indices),
+                gl.STATIC_DRAW);
 
-    // viewport
-    gl.viewport(0, 0, canvas.width, canvas.height);
+            this.indexCount = indices.length;
+        }
 
-    // shader program
-    var shaderProgram = new ShaderProgram(gl, vertexShaderSource, fragmentShaderSource);
-    shaderProgram.SetActive(true);
+        Destroy() {
+            this.posBuffer.Destroy();
+            this.colBuffer.Destroy();
+            this.indexBuffer.Destroy();
+        }
 
-    // vertex buffer
-    var vertices = [
-        -0.4, 0.0,
-        0.0, 0.3,
-        0.4, 0.0,
-    ];
-    var posBuffer = new ConstantBuffer(gl,
-        gl.ARRAY_BUFFER,
-        new Float32Array(vertices),
-        gl.STATIC_DRAW,
-        shaderProgram.GetAttrLoc("pos"),
-        gl.FLOAT, 2);
-
-    var colors = [
-        1.0, 0.2, 0.2,
-        1.0, 0.2, 0.2,
-        1.0, 0.2, 0.2
-    ];
-    var colBuffer = new ConstantBuffer(gl,
-        gl.ARRAY_BUFFER,
-        new Float32Array(colors),
-        gl.STATIC_DRAW,
-        shaderProgram.GetAttrLoc("color"),
-        gl.FLOAT, 3);
-
-
-    // index buffer
-    var indices = [0, 1, 2];
-    var indexBuffer = new ConstantBuffer(gl,
-        gl.ELEMENT_ARRAY_BUFFER,
-        new Uint16Array(indices),
-        gl.STATIC_DRAW);
+        Draw() {
+            this.posBuffer.Bind();
+            this.colBuffer.Bind();
+            this.indexBuffer.Bind();
+            gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
+        }
+    }
 
     function init() {
+        var canvas = document.getElementById('c');
+        gl = canvas.getContext('webgl', { alpha: true, depth: true });
+
+        // shader program
+        shaderProgram = new ShaderProgram(gl,
+            document.querySelector("#vertexShader").text,
+            document.querySelector("#fragmentShader").text);
+        shaderProgram.SetActive(true);
+
         // depth
         gl.depthFunc(gl.LEQUAL);
         gl.enable(gl.DEPTH_TEST);
@@ -189,45 +185,101 @@
         gl.depthMask(true);
 
         // color
-        gl.clearColor(0.2, 0.7, 0.3, 1.0);
+        gl.clearColor(0.3, 0.7, 0.3, 1.0);
         gl.colorMask(true, true, true, true);
 
         // viewport
         gl.viewport(0, 0, canvas.width, canvas.height);
+
+        // game objects
+        gameObjects = [];
+        /* 
+        * currently using a per-object-buffer setup
+        * with static_draw buffer usage. Depending on future tasks,
+        * this can be changed to creating 3 global buffers for pos, col and indices
+        * which each object uploads its data to on every draw call
+        * -> dynamic buffer usage
+        */
+
+        // roof
+        {
+            var vertices = [
+                -0.4, 0.0,
+                0.0, 0.3,
+                0.4, 0.0,];
+            var colors = [
+                1.0, 0.2, 0.2,
+                1.0, 0.2, 0.2,
+                1.0, 0.2, 0.2];
+            var indices = [0, 1, 2];
+            gameObjects.push(new GameObject(gl, vertices, colors, indices));
+        }
+
+        // house base
+        {
+            var vertices = [
+                -0.35, 0.0,
+                0.35, 0.0,
+                0.35, -0.5,
+                -0.35, -0.5];
+            var colors = [
+                1.0, 0.9, 0.9,
+                1.0, 0.9, 0.9,
+                1.0, 0.9, 0.9,
+                1.0, 0.9, 0.9];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            gameObjects.push(new GameObject(gl, vertices, colors, indices));
+        }
     };
 
     function update() {
-
+        // TODO
     };
 
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-
-        // this needs to be per-object
-        posBuffer.Bind();
-        colBuffer.Bind();
-        indexBuffer.Bind();
-        gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+        for (var i = 0; i < gameObjects.length; ++i) {
+            gameObjects[i].Draw();
+        }
     };
 
-    (function main() {
+    function shutdown() {
+        {
+            // release resources
+            for (var i = 0; i < gameObjects.length; ++i) {
+                gameObjects[i].Destroy();
+            }
+            shaderProgram.Destroy();
+        }
+    };
+
+    main();
+    function main() {
+        var gl;
+        var gameObjects;
+        var shaderProgram;
+
         init();
 
-        (function animate() {
+        var lastFrameTimestamp = 0;
+        var deltaTime = 0;
+        var frameRate = 0;
+
+        // initiate frame pass loop
+        renderLoop(0);
+        function renderLoop(time) {
+            deltaTime = (time *= 0.001) - lastFrameTimestamp;
+            lastFrameTimestamp = time;
+            framerate = 1.0 / deltaTime;
+
+            //console.log(framerate);
+            //console.log(deltaTime);
+
             update();
             render();
-            requestAnimationFrame(animate);
-        })();
-    })();
+            requestAnimationFrame(renderLoop);
+        };
 
-
-    // shutdown
-    // {
-    //     // release buffers
-    //     posBuffer.Destroy();
-    //     indexBuffer.Destroy();
-    //     shaderProgram.Destroy();
-    // }
-
+        // shutdown();
+    };
 </script>
