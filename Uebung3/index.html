@@ -81,8 +81,8 @@
             var colD = [0, 0, 0, 1];
             var yRotMat = new Matrix4x4(colA, colB, colC, colD);
 
-            var colA = [Math.cos(z), 0, Math.sin(z), 0];
-            var colB = [-Math.sin(z), 1, Math.cos(z), 0];
+            var colA = [Math.cos(z), Math.sin(z), 0, 0];
+            var colB = [-Math.sin(z), Math.cos(z), 0, 0];
             var colC = [0, 0, 1, 0];
             var colD = [0, 0, 0, 1];
             var zRotMat = new Matrix4x4(colA, colB, colC, colD);
