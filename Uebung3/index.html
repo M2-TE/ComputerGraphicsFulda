@@ -9,7 +9,7 @@
 
 <script id="vertexShader" type="notjs">
     attribute vec4 pos;
-    uniform vec3 color;
+    attribute vec3 color;
     varying vec3 vColor;
     void main() {
         vColor = color;
@@ -38,16 +38,65 @@
     var vertexShaderSource = document.querySelector("#vertexShader").text;
     var fragmentShaderSource = document.querySelector("#fragmentShader").text;
 
-    function createShader(type, source) {
+    class ConstantBuffer {
+        constructor(gl, type, data, usage, attribLoc, attribType, attribByteLen) {
+            this.gl = gl;
+            this.type = type;
+            this.data = data;
+            this.usage = usage;
+
+            this.attribType = attribType;
+            this.attribByteLen = attribByteLen;
+            this.attribLoc = attribLoc
+
+            this.buffer = gl.createBuffer();
+            gl.bindBuffer(type, this.buffer);
+            gl.bufferData(type, data, usage);
+        }
+
+        // why the fuck are there no destructors in javascript
+        Destroy() {
+            gl.deleteBuffer(this.buffer);
+            // gl.disableVertexAttribArray(this.attribLoc);
+        }
+
+        Bind() {
+            gl.bindBuffer(this.type, this.buffer);
+            if (this.attribType) this.EnableInputLayout();
+        }
+
+        EnableInputLayout() {
+            gl.vertexAttribPointer(this.attribLoc, this.attribByteLen, this.attribType, false, 0, 0);
+            gl.enableVertexAttribArray(this.attribLoc);
+        }
+
+        DisableInputLayout() {
+            gl.disableVertexAttribArray(this.attribLoc);
+        }
+    }
+
+    class ShaderProgram {
+        constructor(gl, vsSource, fsSource) {
+            this.program = createProgram(vsSource, fsSource);
+        }
+
+        SetActive(gl, bActive) {
+            if (bActive) {
+
+            }
+        }
+    }
+
+    function createShader(gl, type, source) {
         var shader = gl.createShader(type);
         gl.shaderSource(shader, source);
         gl.compileShader(shader);
         return shader;
     };
 
-    function createProgram(vsSource, fsSource) {
-        var vs = createShader(gl.VERTEX_SHADER, vsSource);
-        var fs = createShader(gl.FRAGMENT_SHADER, fsSource);
+    function createProgram(gl, vsSource, fsSource) {
+        var vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+        var fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
 
         if (vs && fs) {
             var program = gl.createProgram();
@@ -64,10 +113,6 @@
         return null;
     };
 
-    function main() {
-
-    };
-
     // depth
     gl.depthFunc(gl.LEQUAL);
     gl.enable(gl.DEPTH_TEST);
@@ -82,58 +127,91 @@
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     // shader program
-    var shaderProgram = createProgram(vertexShaderSource, fragmentShaderSource)
-    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-        console.warn("Could not	link program: " + gl.getProgramInfoLog(shaderProgram));
-    }
+    var shaderProgram = createProgram(gl, vertexShaderSource, fragmentShaderSource)
+    gl.useProgram(shaderProgram);
 
-    // render loop
-    {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    // vertex buffer
+    var vertices = [
+        -0.4, 0.0,
+        0.0, 0.3,
+        0.4, 0.0,
+    ];
+    var posBuffer = new ConstantBuffer(gl,
+        gl.ARRAY_BUFFER,
+        new Float32Array(vertices),
+        gl.STATIC_DRAW,
+        gl.getAttribLocation(shaderProgram, "pos"),
+        gl.FLOAT, 2);
 
-        // vertex buffer
-        var posBuf = gl.createBuffer();
-        var vertices = [
-            0.0, 0.0,
-            0.0, 0.5,
-            0.7, 0.0,
-        ];
-        gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    var colors = [
+        1.0, 0.2, 0.2,
+        1.0, 0.2, 0.2,
+        1.0, 0.2, 0.2
+    ];
+    var colBuffer = new ConstantBuffer(gl,
+        gl.ARRAY_BUFFER,
+        new Float32Array(colors),
+        gl.STATIC_DRAW,
+        gl.getAttribLocation(shaderProgram, "color"),
+        gl.FLOAT, 3);
 
-        // index buffer
-        var indexBuffer = gl.createBuffer();
-        var indices = [0, 1, 2];
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
-        //	render frame
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    // index buffer
+    var indices = [0, 1, 2];
+    var indexBuffer = new ConstantBuffer(gl,
+        gl.ELEMENT_ARRAY_BUFFER,
+        new Uint16Array(indices),
+        gl.STATIC_DRAW);
+
+    function init() {
+        // depth
+        gl.depthFunc(gl.LEQUAL);
+        gl.enable(gl.DEPTH_TEST);
         gl.clearDepth(1.0);
+        gl.depthMask(true);
+
+        // color
+        gl.clearColor(0.2, 0.7, 0.3, 1.0);
+        gl.colorMask(true, true, true, true);
+
+        // viewport
         gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+
+    function update() {
+
+    };
+
+    function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        gl.useProgram(shaderProgram);
-        gl.enableVertexAttribArray(posAttribLocation);
 
-        // set uniform
-        var color = gl.getUniformLocation(shaderProgram, "color");
-        gl.uniform3f(color, 1.0, 1.0, 1.0);
 
-        //	2 components (x,y); 32bit floats; don't normalize; no stride and offset
-        var posAttribLocation = gl.getAttribLocation(shaderProgram, "pos");
-        gl.vertexAttribPointer(posAttribLocation, 2, gl.FLOAT, false, 0, 0);
-
-        //	offset is 0, with 1	element
+        // this needs to be per-object
+        posBuffer.Bind();
+        colBuffer.Bind();
+        indexBuffer.Bind();
         gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
-        gl.disableVertexAttribArray(posAttribLocation);
+    };
 
-        //	finally delete VBO	after	last	frame
-        gl.deleteBuffer(posBuf);
-        gl.deleteBuffer(indexBuffer);
-    }
+    function main() {
+        init();
+
+        (function animate() {
+            update();
+            render();
+            requestAnimationFrame(animate);
+        })();
+    };
+
+    main();
+
 
     // shutdown
     // {
+    //     // release buffers
+    //     posBuffer.Destroy();
+    //     indexBuffer.Destroy();
+
     //     var shaders = gl.getAttachedShaders(shaderProgram);
     //     for (var i = 0; i < shaders.length; ++i) {
     //         var shader = shaders[i];
@@ -142,4 +220,5 @@
     //     }
     //     gl.deleteProgram(shaderProgram);
     // }
+
 </script>
