@@ -1,26 +1,145 @@
 <!doctype html>
 <html lang="en">
 
-<head>
-    <title>WebGL Demo</title>
-    <meta charset="utf-8">
-</head>
-
 <body>
-    <canvas id="glcanvas" width="640" height="480"></canvas>
+    <canvas id="c" width="400" height="400"></canvas>
 </body>
 
 </html>
 
+<script id="vertexShader" type="notjs">
+    attribute vec4 pos;
+    uniform vec3 color;
+    varying vec3 vColor;
+    void main() {
+        vColor = color;
+        gl_Position = vec4(pos);
+    }
+   
+</script>
+
+<script id="fragmentShader" type="notjs">
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+        precision	highp float;
+    #else
+        precision	mediump float;
+    #endif
+
+    varying vec3 vColor;
+    void main() {
+        gl_FragColor = vec4(vColor, 1.0);
+    }
+   
+</script>
+
 <script>
-    main();
+    var canvas = document.getElementById('c');
+    var gl = canvas.getContext('webgl', { alpha: true, depth: true });
+    var vertexShaderSource = document.querySelector("#vertexShader").text;
+    var fragmentShaderSource = document.querySelector("#fragmentShader").text;
+
+    function createShader(type, source) {
+        var shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        return shader;
+    };
+
+    function createProgram(vsSource, fsSource) {
+        var vs = createShader(gl.VERTEX_SHADER, vsSource);
+        var fs = createShader(gl.FRAGMENT_SHADER, fsSource);
+
+        if (vs && fs) {
+            var program = gl.createProgram();
+            gl.attachShader(program, vs);
+            gl.attachShader(program, fs);
+            gl.linkProgram(program);
+
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.warn("Could not	link program: " + gl.getProgramInfoLog(program));
+                return null;
+            }
+            return program;
+        }
+        return null;
+    };
 
     function main() {
-        const canvas = document.querySelector('#glcanvas');
-        // Initialize the GL context
-        const gl = canvas.getContext('webgl');
 
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+    };
+
+    // depth
+    gl.depthFunc(gl.LEQUAL);
+    gl.enable(gl.DEPTH_TEST);
+    gl.clearDepth(1.0);
+    gl.depthMask(true);
+
+    // color
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.colorMask(true, true, true, true);
+
+    // viewport
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    // shader program
+    var shaderProgram = createProgram(vertexShaderSource, fragmentShaderSource)
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        console.warn("Could not	link program: " + gl.getProgramInfoLog(shaderProgram));
     }
+
+    // render loop
+    {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        // vertex buffer
+        var posBuf = gl.createBuffer();
+        var vertices = [
+            0.0, 0.0,
+            0.0, 0.5,
+            0.7, 0.0,
+        ];
+        gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+        // index buffer
+        var indexBuffer = gl.createBuffer();
+        var indices = [0, 1, 2];
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+        //	render frame
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clearDepth(1.0);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.useProgram(shaderProgram);
+        gl.enableVertexAttribArray(posAttribLocation);
+
+        // set uniform
+        var color = gl.getUniformLocation(shaderProgram, "color");
+        gl.uniform3f(color, 1.0, 1.0, 1.0);
+
+        //	2 components (x,y); 32bit floats; don't normalize; no stride and offset
+        var posAttribLocation = gl.getAttribLocation(shaderProgram, "pos");
+        gl.vertexAttribPointer(posAttribLocation, 2, gl.FLOAT, false, 0, 0);
+
+        //	offset is 0, with 1	element
+        gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+        gl.disableVertexAttribArray(posAttribLocation);
+
+        //	finally delete VBO	after	last	frame
+        gl.deleteBuffer(posBuf);
+        gl.deleteBuffer(indexBuffer);
+    }
+
+    // shutdown
+    // {
+    //     var shaders = gl.getAttachedShaders(shaderProgram);
+    //     for (var i = 0; i < shaders.length; ++i) {
+    //         var shader = shaders[i];
+    //         gl.detachShader(shaderProgram, shader);
+    //         gl.deleteShader(shader);
+    //     }
+    //     gl.deleteProgram(shaderProgram);
+    // }
 </script>
