@@ -70,10 +70,24 @@
 
         static EulerRotation(x, y, z) {
             var colA = [1, 0, 0, 0];
+            var colB = [0, Math.cos(x), Math.sin(x), 0];
+            var colC = [0, -Math.sin(x), Math.cos(x), 0];
+            var colD = [0, 0, 0, 1];
+            var xRotMat = new Matrix4x4(colA, colB, colC, colD);
+
+            var colA = [Math.cos(y), 0, -Math.sin(y), 0];
             var colB = [0, 1, 0, 0];
+            var colC = [Math.sin(y), 0, Math.cos(y), 0];
+            var colD = [0, 0, 0, 1];
+            var yRotMat = new Matrix4x4(colA, colB, colC, colD);
+
+            var colA = [Math.cos(z), 0, Math.sin(z), 0];
+            var colB = [-Math.sin(z), 1, Math.cos(z), 0];
             var colC = [0, 0, 1, 0];
             var colD = [0, 0, 0, 1];
-            return new Matrix4x4(colA, colB, colC, colD);
+            var zRotMat = new Matrix4x4(colA, colB, colC, colD);
+
+            return Matrix4x4.Mul(xRotMat, Matrix4x4.Mul(yRotMat, zRotMat));
         }
 
         static Scale(x, y, z) {
@@ -119,8 +133,6 @@
             this.z = z;
         }
     }
-
-    var vec4 = new Vec3(1, 2, 3);
 </script>
 
 <script>
@@ -255,27 +267,26 @@
     class GameObject {
         constructor(gl, vertices, colors, indices) {
             this.gl = gl;
+            this.indexCount = indices.length;
+            this.transform = new Transform();
+
+            // create buffers
             this.posBuffer = new ConstantBuffer(gl,
                 gl.ARRAY_BUFFER,
                 new Float32Array(vertices),
                 gl.STATIC_DRAW,
                 0, // "pos"
                 gl.FLOAT, 2);
-
             this.colBuffer = new ConstantBuffer(gl,
                 gl.ARRAY_BUFFER,
                 new Float32Array(colors),
                 gl.STATIC_DRAW,
                 1, // "color"
                 gl.FLOAT, 3);
-
             this.indexBuffer = new ConstantBuffer(gl,
                 gl.ELEMENT_ARRAY_BUFFER,
                 new Uint16Array(indices),
                 gl.STATIC_DRAW);
-
-            this.indexCount = indices.length;
-            this.transform = new Transform();
         }
 
         Destroy() {
