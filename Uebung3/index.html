@@ -259,7 +259,8 @@
                     this.scale.y,
                     this.scale.z);
 
-            var res = Matrix4x4.Mul(translationMat, Matrix4x4.Mul(rotationMat, translationMat));
+            // var res = Matrix4x4.Mul(rotationMat, Matrix4x4.Mul(scaleMat, translationMat));
+            var res = Matrix4x4.Mul(translationMat, Matrix4x4.Mul(rotationMat, scaleMat));
             res.SetAsUniform("modelMatVecs");
         }
     };
@@ -366,13 +367,88 @@
             var indices = [0, 1, 2, /**/ 0, 2, 3];
             gameObjects.push(new GameObject(gl, vertices, colors, indices));
         }
+
+        // clock square background (too lazy to make it round)
+        {
+            var vertices = [
+                -0.25, 0.25,
+                0.25, 0.25,
+                0.25, -0.25,
+                -0.25, -0.25];
+            var colors = [
+                0.7, 0.7, 0.7,
+                0.7, 0.7, 0.7,
+                0.7, 0.7, 0.7,
+                0.7, 0.7, 0.7];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            gameObjects.push(new GameObject(gl, vertices, colors, indices));
+            gameObjects[2].transform.position = new Vec3(0, -.25, 0);
+            gameObjects[2].transform.scale = new Vec3(.65, .65, 0);
+        }
+
+        // clock hour handle
+        {
+            var vertices = [
+                -0.25, 0.0,
+                0.25, 0.0,
+                0.25, 0.5,
+                -0.25, 0.5];
+            var colors = [
+                0.5, 0.5, 0.5,
+                0.5, 0.5, 0.5,
+                0.5, 0.5, 0.5,
+                0.5, 0.5, 0.5];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            gameObjects.push(new GameObject(gl, vertices, colors, indices));
+            gameObjects[3].transform.position = new Vec3(0, -.25, 0);
+            gameObjects[3].transform.scale = new Vec3(0.04, .15, 1);
+        }
+
+        // clock minute handle
+        {
+            var vertices = [
+                -0.25, 0.0,
+                0.25, 0.0,
+                0.25, 0.5,
+                -0.25, 0.5];
+            var colors = [
+                0.3, 0.3, 0.3,
+                0.3, 0.3, 0.3,
+                0.3, 0.3, 0.3,
+                0.3, 0.3, 0.3];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            gameObjects.push(new GameObject(gl, vertices, colors, indices));
+            gameObjects[4].transform.position = new Vec3(0, -.25, 0);
+            gameObjects[4].transform.scale = new Vec3(0.04, .25, 1);
+        }
+
+        // clock second handle
+        {
+            var vertices = [
+                -0.25, 0.0,
+                0.25, 0.0,
+                0.25, 0.5,
+                -0.25, 0.5];
+            var colors = [
+                0.1, 0.1, 0.1,
+                0.1, 0.1, 0.1,
+                0.1, 0.1, 0.1,
+                0.1, 0.1, 0.1];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            gameObjects.push(new GameObject(gl, vertices, colors, indices));
+            gameObjects[5].transform.position = new Vec3(0, -.25, 0);
+            gameObjects[5].transform.scale = new Vec3(0.03, .3, 1);
+        }
     };
 
-    function update() {
-        // TODO
+    function update(time, deltaTime) {
+        var time = new Date();
+        gameObjects[3].transform.rotEuler = new Vec3(0, 0, time.getHours() / Math.PI / 3);
+        gameObjects[4].transform.rotEuler = new Vec3(0, 0, time.getMinutes() / Math.PI / 3);
+        gameObjects[5].transform.rotEuler = new Vec3(0, 0, time.getSeconds() / Math.PI / 3);
     };
 
-    function render() {
+    function render(time, deltaTime) {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         for (var i = 0; i < gameObjects.length; ++i) {
             gameObjects[i].Draw();
@@ -411,8 +487,8 @@
             //console.log(framerate);
             //console.log(deltaTime);
 
-            update();
-            render();
+            update(time, deltaTime);
+            render(time, deltaTime);
             requestAnimationFrame(renderLoop);
         };
 
