@@ -259,6 +259,7 @@
                     this.scale.y,
                     this.scale.z);
 
+            // first scale, then rotate, then translate (order predetermined due to col-major)
             var res = Matrix4x4.Mul(translationMat, Matrix4x4.Mul(rotationMat, scaleMat));
             res.SetAsUniform("modelMatVecs");
         }
