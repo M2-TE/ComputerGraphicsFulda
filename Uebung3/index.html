@@ -24,7 +24,8 @@
             modelMatVecs[2], 
             modelMatVecs[3]);
             
-        gl_Position = pos * modelMat;
+        // since its column major, pos vec on the right
+        gl_Position = modelMat * pos;
     }
 </script>
 <script id="fragmentShader" type="notjs">
@@ -42,7 +43,6 @@
 </script>
 
 <script>
-    // GLSL is column major, therefore make these column major as well
     class Matrix4x4 {
         constructor(a, b, c, d) {
             this.vals = [a, b, c, d];
@@ -61,33 +61,36 @@
         }
 
         static Translation(x, y, z) {
-            var colA = [1, 0, 0, x];
-            var colB = [0, 1, 0, y];
-            var colC = [0, 0, 1, z];
-            var colD = [0, 0, 0, 1];
+            var colA = [1, 0, 0, 0];
+            var colB = [0, 1, 0, 0];
+            var colC = [0, 0, 1, 0];
+            var colD = [x, y, z, 1];
             return new Matrix4x4(colA, colB, colC, colD);
         }
 
         static EulerRotation(x, y, z) {
+            // roll
             var colA = [1, 0, 0, 0];
-            var colB = [0, Math.cos(x), Math.sin(x), 0];
-            var colC = [0, -Math.sin(x), Math.cos(x), 0];
+            var colB = [0, Math.cos(x), -Math.sin(x), 0];
+            var colC = [0, Math.sin(x), Math.cos(x), 0];
             var colD = [0, 0, 0, 1];
             var xRotMat = new Matrix4x4(colA, colB, colC, colD);
 
-            var colA = [Math.cos(y), 0, -Math.sin(y), 0];
+            // pitch
+            var colA = [Math.cos(y), 0, Math.sin(y), 0];
             var colB = [0, 1, 0, 0];
-            var colC = [Math.sin(y), 0, Math.cos(y), 0];
+            var colC = [-Math.sin(y), 0, Math.cos(y), 0];
             var colD = [0, 0, 0, 1];
             var yRotMat = new Matrix4x4(colA, colB, colC, colD);
 
-            var colA = [Math.cos(z), Math.sin(z), 0, 0];
-            var colB = [-Math.sin(z), Math.cos(z), 0, 0];
+            // yaw
+            var colA = [Math.cos(z), -Math.sin(z), 0, 0];
+            var colB = [Math.sin(z), Math.cos(z), 0, 0];
             var colC = [0, 0, 1, 0];
             var colD = [0, 0, 0, 1];
             var zRotMat = new Matrix4x4(colA, colB, colC, colD);
 
-            return Matrix4x4.Mul(xRotMat, Matrix4x4.Mul(yRotMat, zRotMat));
+            return Matrix4x4.Mul(Matrix4x4.Mul(xRotMat, yRotMat), zRotMat);
         }
 
         static Scale(x, y, z) {
@@ -259,8 +262,8 @@
                     this.scale.y,
                     this.scale.z);
 
-            // first scale, then rotate, then translate (order predetermined due to col-major)
-            var res = Matrix4x4.Mul(translationMat, Matrix4x4.Mul(rotationMat, scaleMat));
+            // first scale, then rotate, then translate
+            var res = Matrix4x4.Mul(Matrix4x4.Mul(scaleMat, rotationMat), translationMat);
             res.SetAsUniform("modelMatVecs");
         }
     };
