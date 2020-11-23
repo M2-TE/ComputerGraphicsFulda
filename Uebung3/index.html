@@ -259,7 +259,6 @@
                     this.scale.y,
                     this.scale.z);
 
-            // var res = Matrix4x4.Mul(rotationMat, Matrix4x4.Mul(scaleMat, translationMat));
             var res = Matrix4x4.Mul(translationMat, Matrix4x4.Mul(rotationMat, scaleMat));
             res.SetAsUniform("modelMatVecs");
         }
@@ -442,6 +441,7 @@
     };
 
     function update(time, deltaTime) {
+        // who needs performance anyways, eh?
         var time = new Date();
         gameObjects[3].transform.rotEuler = new Vec3(0, 0, time.getHours() / Math.PI / 3);
         gameObjects[4].transform.rotEuler = new Vec3(0, 0, time.getMinutes() / Math.PI / 3);
