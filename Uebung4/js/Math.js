@@ -15,6 +15,17 @@ class Matrix4x4 {
         gl.uniform4f(col3, this.vals[3][0], this.vals[3][1], this.vals[3][2], this.vals[3][3]);
     }
 
+    static Perspective(fov, nearClip, farClip) {
+        var fovMod = 1 / Math.tan((fov / 2) * (Math.PI / 180));
+        var clipA = -(farClip / (farClip - nearClip));
+        var clipB = -((farClip * nearClip) / (farClip - nearClip));
+        var colA = [fovMod, 0, 0, 0];
+        var colB = [0, fovMod, 0, 0];
+        var colC = [0, 0, clipA, -1];
+        var colD = [0, 0, clipB, 0];
+        return new Matrix4x4(colA, colB, colC, colD);
+    }
+
     static Translation(x, y, z) {
         var colA = [1, 0, 0, 0];
         var colB = [0, 1, 0, 0];

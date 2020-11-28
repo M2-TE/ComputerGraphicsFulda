@@ -81,12 +81,17 @@ class GameObject {
 }
 
 class Camera {
-    constructor(gl) {
+    constructor(gl, fov, nearClip, farClip) {
         this.gl = gl;
+        // this.fov = fov;
+        // this.nearClip = nearClip;
+        // this.farClip = farClip;
         this.transform = new Transform();
+        this.perspectiveMat = Matrix4x4.Perspective(fov, nearClip, farClip);
     }
 
     Bind(shaderProgram) {
         this.transform.BindAsView(shaderProgram);
+        this.perspectiveMat.SetAsUniform(shaderProgram, "perspMatVecs");
     }
 }

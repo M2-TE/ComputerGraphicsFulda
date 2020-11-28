@@ -54,7 +54,8 @@
 
         var clockTex = loadTexture(gl);
 
-        camera = new Camera(gl);
+        camera = new Camera(gl, 60, 0.001, 1000);
+        camera.transform.position.z = 1;
 
         // shader program
         var shaderProgram = new ShaderProgram(gl, defaultVS, defaultFS);
