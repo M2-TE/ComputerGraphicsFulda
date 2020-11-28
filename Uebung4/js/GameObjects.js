@@ -58,7 +58,7 @@ class GameObject {
         this.indexBuffer.Destroy();
     }
 
-    Draw() {
+    Draw(camera) {
         this.shaderProgram.SetActive();
 
         if (typeof this.texture !== "undefined") {
@@ -67,18 +67,26 @@ class GameObject {
             var loc = this.shaderProgram.GetUnifLoc('texSampler');
             this.gl.uniform1i(loc, 0);
 
-            this.posBuffer.Bind();
             this.texCoordBuffer.Bind();
-            this.indexBuffer.Bind();
-            this.transform.Bind(this.shaderProgram);
-            gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
         } else {
-
-            this.posBuffer.Bind();
             this.colBuffer.Bind();
-            this.indexBuffer.Bind();
-            this.transform.Bind(this.shaderProgram);
-            gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
         }
+
+        camera.Bind(this.shaderProgram);
+        this.posBuffer.Bind();
+        this.indexBuffer.Bind();
+        this.transform.Bind(this.shaderProgram);
+        gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
+    }
+}
+
+class Camera {
+    constructor(gl) {
+        this.gl = gl;
+        this.transform = new Transform();
+    }
+
+    Bind(shaderProgram) {
+        this.transform.BindAsView(shaderProgram);
     }
 }

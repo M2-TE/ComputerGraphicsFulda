@@ -1,5 +1,6 @@
 texturedVS = `
     uniform vec4 modelMatVecs[4];
+    uniform vec4 viewMatVecs[4];
 
     attribute vec4 pos;
     attribute vec2 texCoord;
@@ -15,6 +16,14 @@ texturedVS = `
             modelMatVecs[2],
             modelMatVecs[3]);
 
-        gl_Position = modelMat * pos;
+        mat4 viewMat = mat4(
+            viewMatVecs[0],
+            viewMatVecs[1],
+            viewMatVecs[2],
+            viewMatVecs[3]);
+
+        vec4 posOut = modelMat * pos;
+        posOut = viewMat * posOut;
+        gl_Position = posOut;
     }
 `;

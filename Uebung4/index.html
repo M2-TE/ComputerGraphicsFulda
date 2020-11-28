@@ -15,7 +15,7 @@
 
 <script src="js/Math.js"></script>
 <script src="js/GlWrappers.js"></script>
-<script src="js/GameObject.js"></script>
+<script src="js/GameObjects.js"></script>
 <script src="js/Components.js"></script>
 
 <script>
@@ -54,6 +54,8 @@
 
         var clockTex = loadTexture(gl);
 
+        camera = new Camera(gl);
+
         // shader program
         shaderProgram = new ShaderProgram(gl, defaultVS, defaultFS);
         texShaderProgram = new ShaderProgram(gl, texturedVS, texturedFS);
@@ -71,8 +73,25 @@
         // viewport
         gl.viewport(0, 0, canvas.width, canvas.height);
 
+        // transparency
         gl.enable(gl.BLEND)
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+        c.setAttribute("tabindex", "0");
+        canvas.addEventListener('keypress', function (evt) {
+            switch (evt.charCode) {
+                case 43: /* + */ camera.transform.position.z -= deltaTime; break;
+                case 45: /* - */ camera.transform.position.z += deltaTime; break;
+            }
+        }, true);
+        c.addEventListener('keydown', function (evt) {
+            switch (evt.keyCode) {
+                case 37: /* left */ camera.transform.position.x -= deltaTime; break;
+                case 38: /* up */ camera.transform.position.y += deltaTime; break;
+                case 39: /* right */ camera.transform.position.x += deltaTime; break;
+                case 40: /* down */ camera.transform.position.y -= deltaTime; break;
+            }
+        }, true);
 
         // game objects
         gameObjects = [];
@@ -193,18 +212,17 @@
         }
     };
 
-    function update(time, deltaTime) {
-        // who needs performance anyways, eh?
+    function update() {
         var time = new Date();
         gameObjects[3].transform.rotEuler = new Vec3(0, 0, time.getHours() % 12 / Math.PI * 1.66);
         gameObjects[4].transform.rotEuler = new Vec3(0, 0, time.getMinutes() / Math.PI / 3);
         gameObjects[5].transform.rotEuler = new Vec3(0, 0, time.getSeconds() / Math.PI / 3);
     };
 
-    function render(time, deltaTime) {
+    function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         for (var i = 0; i < gameObjects.length; ++i) {
-            gameObjects[i].Draw();
+            gameObjects[i].Draw(camera);
         }
     };
 
@@ -218,17 +236,21 @@
         }
     };
 
+
+    var gl;
+    var gameObjects;
+    var shaderProgram;
+    var camera;
+    var deltaTime;
+
     main();
     function main() {
-        var gl;
-        var gameObjects;
-        var shaderProgram;
 
         init();
 
         var lastFrameTimestamp = 0;
-        var deltaTime = 0;
         var frameRate = 0;
+        deltaTime = 0;
 
         // initiate frame pass loop
         renderLoop(0);
@@ -240,8 +262,8 @@
             //console.log(framerate);
             //console.log(deltaTime);
 
-            update(time, deltaTime);
-            render(time, deltaTime);
+            update();
+            render();
             requestAnimationFrame(renderLoop);
         };
 
