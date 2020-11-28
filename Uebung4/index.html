@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+
+<body>
+    <canvas id="c" width="400" height="400">
+</body>
+
+</html>
+
+<script src="Shaders/Default.vert"></script>
+<script src="Shaders/Default.frag"></script>
+
+<script src="Shaders/Textured.vert"></script>
+<script src="Shaders/Textured.frag"></script>
+
+<script src="js/Math.js"></script>
+<script src="js/GlWrappers.js"></script>
+<script src="js/GameObject.js"></script>
+<script src="js/Components.js"></script>
+
+<script>
+    function loadTexture(gl) {
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA,
+            gl.UNSIGNED_BYTE, new Uint8Array([100, 100, 100, 255]));
+
+        var image = new Image();
+        image.onload = function () {
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+            function isPowerOf2(value) {
+                return (value & (value - 1)) == 0;
+            }
+
+            if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+                gl.generateMipmap(gl.TEXTURE_2D);
+            } else {
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            }
+        }
+        image.src = "Textures/ClockFace.png";
+
+        return texture;
+    }
+
+    function init() {
+        var canvas = document.getElementById('c');
+        gl = canvas.getContext('webgl', { alpha: true, depth: true });
+
+        var clockTex = loadTexture(gl);
+
+        // shader program
+        shaderProgram = new ShaderProgram(gl, defaultVS, defaultFS);
+        texShaderProgram = new ShaderProgram(gl, texturedVS, texturedFS);
+
+        // depth
+        gl.depthFunc(gl.LEQUAL);
+        gl.enable(gl.DEPTH_TEST);
+        gl.clearDepth(1.0);
+        gl.depthMask(true);
+
+        // color
+        gl.clearColor(0.3, 0.7, 0.3, 1.0);
+        gl.colorMask(true, true, true, true);
+
+        // viewport
+        gl.viewport(0, 0, canvas.width, canvas.height);
+
+        gl.enable(gl.BLEND)
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+        // game objects
+        gameObjects = [];
+        /* 
+        * currently using a per-object-buffer setup
+        * with static_draw buffer usage. Depending on future tasks,
+        * this can be changed to creating 3 global buffers for pos, col and indices
+        * which each object uploads its data to on every draw call
+        * -> dynamic buffer usage
+        */
+
+        // house roof (vertices directly transformed)
+        {
+            var vertices = [
+                -0.4, 0.0,
+                0.0, 0.3,
+                0.4, 0.0,];
+            var colors = [
+                1.0, 0.2, 0.2,
+                1.0, 0.2, 0.2,
+                1.0, 0.2, 0.2];
+            var indices = [0, 1, 2];
+            var go = gameObjects[gameObjects.push(new GameObject(gl, shaderProgram)) - 1];
+            go.AssignVertCol(vertices, colors, indices);
+        }
+
+        // house base (vertices directly transformed)
+        {
+            var vertices = [
+                -0.35, 0.0,
+                0.35, 0.0,
+                0.35, -0.5,
+                -0.35, -0.5];
+            var colors = [
+                1.0, 0.9, 0.9,
+                1.0, 0.9, 0.9,
+                1.0, 0.9, 0.9,
+                1.0, 0.9, 0.9];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            var go = gameObjects[gameObjects.push(new GameObject(gl, shaderProgram)) - 1];
+            go.AssignVertCol(vertices, colors, indices);
+        }
+
+        // clock square background (too lazy to make it round)
+        {
+            var vertices = [
+                -0.25, 0.25,
+                0.25, 0.25,
+                0.25, -0.25,
+                -0.25, -0.25];
+            var uvs = [
+                0.0, 0.0,
+                1.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0,];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            var go = gameObjects[gameObjects.push(new GameObject(gl, texShaderProgram)) - 1];
+            go.AssignVertTex(vertices, uvs, indices, clockTex);
+            go.transform.position = new Vec3(0, -.25, 0);
+            go.transform.scale = new Vec3(.65, .65, 0);
+        }
+
+        // clock hour handle
+        {
+            var vertices = [
+                -0.25, 0.0,
+                0.25, 0.0,
+                0.25, 0.5,
+                -0.25, 0.5];
+            var colors = [
+                0.5, 0.5, 0.5,
+                0.5, 0.5, 0.5,
+                0.5, 0.5, 0.5,
+                0.5, 0.5, 0.5];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            var go = gameObjects[gameObjects.push(new GameObject(gl, shaderProgram)) - 1];
+            go.AssignVertCol(vertices, colors, indices);
+            go.transform.position = new Vec3(0, -.25, 0);
+            go.transform.scale = new Vec3(0.04, .15, 1);
+        }
+
+        // clock minute handle
+        {
+            var vertices = [
+                -0.25, 0.0,
+                0.25, 0.0,
+                0.25, 0.5,
+                -0.25, 0.5];
+            var colors = [
+                0.3, 0.3, 0.3,
+                0.3, 0.3, 0.3,
+                0.3, 0.3, 0.3,
+                0.3, 0.3, 0.3];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            var go = gameObjects[gameObjects.push(new GameObject(gl, shaderProgram)) - 1];
+            go.AssignVertCol(vertices, colors, indices);
+            go.transform.position = new Vec3(0, -.25, 0);
+            go.transform.scale = new Vec3(0.04, .25, 1);
+        }
+
+        // clock second handle
+        {
+            var vertices = [
+                -0.25, 0.0,
+                0.25, 0.0,
+                0.25, 0.5,
+                -0.25, 0.5];
+            var colors = [
+                0.1, 0.1, 0.1,
+                0.1, 0.1, 0.1,
+                0.1, 0.1, 0.1,
+                0.1, 0.1, 0.1];
+            var indices = [0, 1, 2, /**/ 0, 2, 3];
+            var go = gameObjects[gameObjects.push(new GameObject(gl, shaderProgram)) - 1];
+            go.AssignVertCol(vertices, colors, indices);
+            go.transform.position = new Vec3(0, -.25, 0);
+            go.transform.scale = new Vec3(0.03, .3, 1);
+        }
+    };
+
+    function update(time, deltaTime) {
+        // who needs performance anyways, eh?
+        var time = new Date();
+        gameObjects[3].transform.rotEuler = new Vec3(0, 0, time.getHours() % 12 / Math.PI * 1.66);
+        gameObjects[4].transform.rotEuler = new Vec3(0, 0, time.getMinutes() / Math.PI / 3);
+        gameObjects[5].transform.rotEuler = new Vec3(0, 0, time.getSeconds() / Math.PI / 3);
+    };
+
+    function render(time, deltaTime) {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        for (var i = 0; i < gameObjects.length; ++i) {
+            gameObjects[i].Draw();
+        }
+    };
+
+    function shutdown() {
+        {
+            // release resources
+            for (var i = 0; i < gameObjects.length; ++i) {
+                gameObjects[i].Destroy();
+            }
+            shaderProgram.Destroy();
+        }
+    };
+
+    main();
+    function main() {
+        var gl;
+        var gameObjects;
+        var shaderProgram;
+
+        init();
+
+        var lastFrameTimestamp = 0;
+        var deltaTime = 0;
+        var frameRate = 0;
+
+        // initiate frame pass loop
+        renderLoop(0);
+        function renderLoop(time) {
+            deltaTime = (time *= 0.001) - lastFrameTimestamp;
+            lastFrameTimestamp = time;
+            framerate = 1.0 / deltaTime;
+
+            //console.log(framerate);
+            //console.log(deltaTime);
+
+            update(time, deltaTime);
+            render(time, deltaTime);
+            requestAnimationFrame(renderLoop);
+        };
+
+        // shutdown();
+    };
+</script>
