@@ -3,7 +3,7 @@ texturedVS = `
     uniform vec4 viewMatVecs[4];
     uniform vec4 perspMatVecs[4];
 
-    attribute vec4 pos;
+    attribute vec3 pos;
     attribute vec2 texCoord;
 
     varying highp vec2 vTexCoord;
@@ -29,7 +29,7 @@ texturedVS = `
             perspMatVecs[2],
             perspMatVecs[3]);
 
-        vec4 posOut = vec4(pos.x, pos.y, 0.0, 1.0);
+        vec4 posOut = vec4(pos, 1.0);
         posOut = modelMat * posOut;
         posOut = viewMat * posOut;
         posOut = perspMat * posOut;
