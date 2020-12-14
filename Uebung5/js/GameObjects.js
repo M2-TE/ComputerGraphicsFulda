@@ -80,6 +80,74 @@ class ColGameObject extends GameObject {
             this.gl.STATIC_DRAW);
     }
 
+    static Cube(gl, shaderProgram, color) {
+        // unit values
+        const unit = 0.5;
+        const pnit = -0.5;
+
+        var verts = [
+            pnit, unit, unit,
+            unit, unit, unit,
+            pnit, unit, pnit,
+            unit, unit, pnit,
+            pnit, pnit, unit,
+            unit, pnit, unit,
+            pnit, pnit, pnit,
+            unit, pnit, pnit];
+        var cols = [
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z];
+        var indices = [
+            0, 1, 2, 1, 3, 2, // top
+            4, 6, 5, 6, 7, 5, // bot
+            2, 3, 6, 3, 7, 6, // fwd
+            1, 0, 5, 0, 4, 5, // bwd
+            3, 1, 7, 1, 5, 7, // right
+            0, 2, 4, 2, 6, 4];// left
+
+        var go = new ColGameObject(gl, shaderProgram);
+        go.AssignVerts(verts, cols, indices);
+        return go;
+    }
+
+    static Sphere(gl, shaderProgram, nLong, nLati, color) {
+        const nLongP = nLong + 1, nLatiP = nLati + 1;
+        var verts = [];
+        var cols = [];
+        var indices = [];
+
+        for (var lati = 0; lati < nLatiP; ++lati) {
+            for (var long = 0; long < nLongP; ++long) {
+                const x = Math.sin(Math.PI * lati / nLati) * Math.cos(2 * Math.PI * long / nLong)
+                const y = Math.sin(Math.PI * lati / nLati) * Math.sin(2 * Math.PI * long / nLong);
+                const z = Math.cos(Math.PI * lati / nLati);
+                verts.push(x, y, z);
+                cols.push(1.0, 0.2, 0.2);
+            }
+        }
+        for (var lati = 0; lati < nLati; ++lati) {
+            for (var long = 0; long < nLong; ++long) {
+                const latiIndex = lati * nLatiP
+                const latiIndexP = (lati + 1) * nLatiP;
+                const longIndex = long;
+                const longIndexP = long + 1;
+                indices.push(
+                    latiIndex + longIndex, latiIndex + longIndexP, latiIndexP + longIndex,
+                    latiIndex + longIndexP, latiIndexP + longIndexP, latiIndexP + longIndex);
+            }
+        }
+
+        var go = new ColGameObject(gl, shaderProgram);
+        go.AssignVerts(verts, cols, indices);
+        return go;
+    }
+
     Draw(camera, drawMode) {
         this.shaderProgram.SetActive();
 

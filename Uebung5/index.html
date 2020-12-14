@@ -68,7 +68,7 @@
         gl.depthMask(true);
 
         // color
-        gl.clearColor(0.3, 0.7, 0.3, 1.0);
+        gl.clearColor(0.3, 0.3, 0.3, 1.0);
         gl.colorMask(true, true, true, true);
 
         // viewport
@@ -78,14 +78,14 @@
         gl.enable(gl.BLEND)
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-        c.setAttribute("tabindex", "0");
+        canvas.setAttribute("tabindex", "0");
         canvas.addEventListener('keypress', function (evt) {
             switch (evt.charCode) {
                 case 43: /* + */ camera.transform.position.z -= deltaTime; break;
                 case 45: /* - */ camera.transform.position.z += deltaTime; break;
             }
         }, true);
-        c.addEventListener('keydown', function (evt) {
+        canvas.addEventListener('keydown', function (evt) {
             switch (evt.keyCode) {
                 case 37: /* left */ camera.transform.position.x -= deltaTime; break;
                 case 38: /* up */ camera.transform.position.y += deltaTime; break;
@@ -96,6 +96,7 @@
 
         // game objects
         gameObjects = [];
+        gizmos = [];
         /* 
         * currently using a per-object-buffer setup
         * with static_draw buffer usage. Depending on future tasks,
@@ -104,92 +105,69 @@
         * -> dynamic buffer usage
         */
 
-        // unit values
-        const unit = 0.5;
-        const pnit = -0.5;
-
-        // cube vert data
-        var cubeVerts = [
-            pnit, unit, unit,
-            unit, unit, unit,
-            pnit, unit, pnit,
-            unit, unit, pnit,
-            pnit, pnit, unit,
-            unit, pnit, unit,
-            pnit, pnit, pnit,
-            unit, pnit, pnit];
-        var cubeCols = [
-            1.0, 0.2, 0.2,
-            1.0, 0.2, 0.2,
-            1.0, 0.2, 0.2,
-            1.0, 0.2, 0.2,
-            1.0, 0.2, 0.2,
-            1.0, 0.2, 0.2,
-            1.0, 0.2, 0.2,
-            1.0, 0.2, 0.2];
-        var cubeIndices = [
-            0, 1, 2, 1, 3, 2, // top
-            4, 6, 5, 6, 7, 5, // bot
-            2, 3, 6, 3, 7, 6, // fwd
-            1, 0, 5, 0, 4, 5, // bwd
-            3, 1, 7, 1, 5, 7, // right
-            0, 2, 4, 2, 6, 4];// left
-
-        // sphere vert data
-        var sphereVerts = [];
-        var sphereCols = [];
-        var sphereIndices = [];
-        const nLong = 8, nLati = 8;
-        const nLongP = nLong + 1, nLatiP = nLati + 1;
-        for (var lati = 0; lati < nLatiP; ++lati) {
-            for (var long = 0; long < nLongP; ++long) {
-                const x = Math.sin(Math.PI * lati / nLati) * Math.cos(2 * Math.PI * long / nLong)
-                const y = Math.sin(Math.PI * lati / nLati) * Math.sin(2 * Math.PI * long / nLong);
-                const z = Math.cos(Math.PI * lati / nLati);
-                sphereVerts.push(x, y, z);
-                sphereCols.push(1.0, 0.2, 0.2);
-            }
-        }
-        for (var lati = 0; lati < nLati; ++lati) {
-            for (var long = 0; long < nLong; ++long) {
-                const latiIndex = lati * nLatiP
-                const latiIndexP = (lati + 1) * nLatiP;
-                const longIndex = long;
-                const longIndexP = long + 1;
-                sphereIndices.push(
-                    latiIndex + longIndex, latiIndex + longIndexP, latiIndexP + longIndex,
-                    latiIndex + longIndexP, latiIndexP + longIndexP, latiIndexP + longIndex);
-            }
-        }
-
         // cube
         {
-            var go = gameObjects[gameObjects.push(new ColGameObject(gl, shaderProgram)) - 1];
-            go.AssignVerts(cubeVerts, cubeCols, cubeIndices);
+            var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
             go.transform.position = new Vec3(1.0, 1.0, 0.0);
             go.transform.rotEuler = new Vec3(1.0, 0.0, 0.0);
+            gameObjects.push(go);
         }
 
         // sphere
         {
-            var go = gameObjects[gameObjects.push(new ColGameObject(gl, shaderProgram)) - 1];
-            go.AssignVerts(sphereVerts, sphereCols, sphereIndices);
+            var go = ColGameObject.Sphere(gl, shaderProgram, 8, 8, new Vec3(1.0, 0.2, 0.2));
             go.transform.position = new Vec3(-1.0, 1.0, 0.0);
             go.transform.rotEuler = new Vec3(0.0, 0.0, 0.0);
+            go.transform.scale = new Vec3(0.5, 0.5, 0.5);
+            gameObjects.push(go);
+        }
+
+        // coordinate gizmo
+        {
+            var verts = [
+                0.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
+
+                0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0,
+
+                0.0, 0.0, 0.0,
+                0.0, 0.0, 1.0];
+            var cols = [
+                1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
+
+                0.0, 1.0, 0.0,
+                0.0, 1.0, 0.0,
+
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0];
+            var indices = [
+                0, 1, 0,
+                2, 3, 2,
+                4, 5, 4];
+            var go = new ColGameObject(gl, shaderProgram);
+            go.AssignVerts(verts, cols, indices);
+            go.transform.position = new Vec3(-1.0, -1.0, 0.0);
+            go.transform.rotEuler = new Vec3(0.0, 0.0, 0.0);
+            gizmos.push(go);
         }
     };
 
     function update() {
         gameObjects[0].transform.rotEuler.y += deltaTime;
-        // gameObjects[1].transform.rotEuler.y += deltaTime;
+        gameObjects[1].transform.rotEuler.y += deltaTime;
     };
 
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        const drawMode = this.gl.TRIANGLES;
-        //const drawMode = this.gl.LINES;
+
         for (var i = 0; i < gameObjects.length; ++i) {
-            gameObjects[i].Draw(camera, drawMode);
+            gameObjects[i].Draw(camera, this.gl.TRIANGLES);
+        }
+
+        for (var i = 0; i < gizmos.length; ++i) {
+            gizmos[i].Draw(camera, this.gl.LINES);
         }
     };
 
@@ -209,6 +187,7 @@
     function main() {
         var gl;
         var gameObjects;
+        var gizmos;
         var camera;
 
         init();
