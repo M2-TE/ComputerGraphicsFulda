@@ -103,17 +103,17 @@
         canvas.addEventListener('keypress', function (evt) {
             const speed = 10.0;
             switch (evt.charCode) {
-                case 43: /* + */ camera.transform.position.z -= deltaTime * speed; break;
-                case 45: /* - */ camera.transform.position.z += deltaTime * speed; break;
+                case 43: /* + */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetFwd(deltaTime * - speed)); break;
+                case 45: /* - */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetFwd(deltaTime * speed)); break;
             }
         }, true);
         canvas.addEventListener('keydown', function (evt) {
             const speed = 10.0;
             switch (evt.keyCode) {
-                case 37: /* left */ camera.transform.position.x -= deltaTime * speed; break;
-                case 38: /* up */ camera.transform.position.y += deltaTime * speed; break;
-                case 39: /* right */ camera.transform.position.x += deltaTime * speed; break;
-                case 40: /* down */ camera.transform.position.y -= deltaTime * speed; break;
+                case 37: /* left */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetRight(deltaTime * - speed)); break;
+                case 39: /* right */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetRight(deltaTime * speed)); break;
+                case 38: /* up */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetUp(deltaTime * speed)); break;
+                case 40: /* down */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetUp(deltaTime * - speed)); break;
             }
         }, true);
 

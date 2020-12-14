@@ -57,6 +57,32 @@ class Matrix4x4 {
         var zRotMat = new Matrix4x4(colA, colB, colC, colD);
 
         return Matrix4x4.Mul(Matrix4x4.Mul(xRotMat, yRotMat), zRotMat);
+        // return Matrix4x4.Mul(Matrix4x4.Mul(zRotMat, yRotMat), xRotMat);
+    }
+
+    static EulerRotationInv(x, y, z) {
+        // roll
+        var colA = [1, 0, 0, 0];
+        var colB = [0, Math.cos(x), -Math.sin(x), 0];
+        var colC = [0, Math.sin(x), Math.cos(x), 0];
+        var colD = [0, 0, 0, 1];
+        var xRotMat = new Matrix4x4(colA, colB, colC, colD);
+
+        // pitch
+        var colA = [Math.cos(y), 0, Math.sin(y), 0];
+        var colB = [0, 1, 0, 0];
+        var colC = [-Math.sin(y), 0, Math.cos(y), 0];
+        var colD = [0, 0, 0, 1];
+        var yRotMat = new Matrix4x4(colA, colB, colC, colD);
+
+        // yaw
+        var colA = [Math.cos(z), -Math.sin(z), 0, 0];
+        var colB = [Math.sin(z), Math.cos(z), 0, 0];
+        var colC = [0, 0, 1, 0];
+        var colD = [0, 0, 0, 1];
+        var zRotMat = new Matrix4x4(colA, colB, colC, colD);
+
+        return Matrix4x4.Mul(Matrix4x4.Mul(zRotMat, yRotMat), xRotMat);
     }
 
     static Scale(x, y, z) {
@@ -100,5 +126,16 @@ class Vec3 {
         this.x = x;
         this.y = y;
         this.z = z;
+    }
+
+    static Mul(mat, vec) {
+        const x = mat.vals[0][0] * vec.x + mat.vals[0][1] * vec.y + mat.vals[0][2] * vec.z;
+        const y = mat.vals[1][0] * vec.x + mat.vals[1][1] * vec.y + mat.vals[1][2] * vec.z;
+        const z = mat.vals[2][0] * vec.x + mat.vals[2][1] * vec.y + mat.vals[2][2] * vec.z;
+        return new Vec3(x, y, z);
+    }
+
+    static Add(a, b) {
+        return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z);
     }
 }

@@ -167,6 +167,25 @@ class Camera {
         this.perspectiveMat = Matrix4x4.Perspective(fov, nearClip, farClip);
     }
 
+
+    GetRight(magnitude) {
+        var dirVec = new Vec3(magnitude, 0.0, 0.0);
+        dirVec = Vec3.Mul(Matrix4x4.EulerRotationInv(-this.transform.rotEuler.x, -this.transform.rotEuler.y, this.transform.rotEuler.z), dirVec);
+        return dirVec;
+    }
+
+    GetUp(magnitude) {
+        var dirVec = new Vec3(0.0, magnitude, 0.0);
+        dirVec = Vec3.Mul(Matrix4x4.EulerRotationInv(-this.transform.rotEuler.x, -this.transform.rotEuler.y, this.transform.rotEuler.z), dirVec);
+        return dirVec;
+    }
+
+    GetFwd(magnitude) {
+        var dirVec = new Vec3(0.0, 0.0, magnitude);
+        dirVec = Vec3.Mul(Matrix4x4.EulerRotationInv(-this.transform.rotEuler.x, -this.transform.rotEuler.y, this.transform.rotEuler.z), dirVec);
+        return dirVec;
+    }
+
     Bind(shaderProgram) {
         this.transform.BindAsView(shaderProgram);
         this.perspectiveMat.SetAsUniform(shaderProgram, "perspMatVecs");

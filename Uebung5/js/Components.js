@@ -37,7 +37,7 @@ class Transform {
                 -this.position.z);
 
         var rotationMat =
-            Matrix4x4.EulerRotation(
+            Matrix4x4.EulerRotationInv(
                 -this.rotEuler.x,
                 -this.rotEuler.y,
                 -this.rotEuler.z);
