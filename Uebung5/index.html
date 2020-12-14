@@ -152,6 +152,38 @@
             go.transform.rotEuler = new Vec3(0.0, 0.0, 0.0);
             gizmos.push(go);
         }
+
+        function degr(degrees) {
+            var pi = Math.PI;
+            return degrees * (pi / 180);
+        }
+        // tree
+        {
+            var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
+            go.transform.position = new Vec3(1.0, -1.6, 0.0);
+            go.transform.rotEuler = new Vec3(degr(0.0), degr(0.0), degr(0.0));
+            go.transform.scale = new Vec3(0.25, 1.0, 0.25);
+            gameObjects.push(go);
+
+            go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
+            go.transform.position = new Vec3(1.0, -1.0, -0.5);
+            go.transform.rotEuler = new Vec3(degr(60.0), degr(0.0), degr(0.0));
+            go.transform.scale = new Vec3(0.25, 1.0, 0.25);
+            gameObjects.push(go);
+
+            go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
+            go.transform.position = new Vec3(1.5, -1.0, 0.0);
+            go.transform.rotEuler = new Vec3(degr(60.0), degr(120.0), degr(0.0));
+            go.transform.scale = new Vec3(0.25, 1.0, 0.25);
+            gameObjects.push(go);
+
+            go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
+            go.transform.position = new Vec3(0.5, -1.0, 0.0);
+            go.transform.rotEuler = new Vec3(degr(60.0), degr(240.0), degr(0.0));
+            go.transform.scale = new Vec3(0.25, 1.0, 0.25);
+            gameObjects.push(go);
+        }
+
     };
 
     function update() {
