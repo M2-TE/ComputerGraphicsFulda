@@ -19,6 +19,24 @@
 <script src="js/Components.js"></script>
 
 <script>
+    var canvas = document.getElementById('c');
+
+    class Mouse {
+        constructor() {
+            this.x = 0.0;
+            this.y = 0.0;
+            this.xDelta = 0.0;
+            this.yDelta = 0.0;
+        }
+
+        Update(xMouse, yMouse) {
+            // this.xDelta = xMouse - this.x;
+            // this.yDelta = yMouse - this.y;
+            this.x = xMouse;
+            this.y = yMouse;
+        }
+    }
+
     function loadTexture(gl) {
         var texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -48,8 +66,11 @@
         return texture;
     }
 
+    function degr(degrees) {
+        return degrees * (Math.PI / 180);
+    }
+
     function init() {
-        var canvas = document.getElementById('c');
         gl = canvas.getContext('webgl', { alpha: true, depth: true });
 
         var clockTex = loadTexture(gl);
@@ -80,18 +101,25 @@
 
         canvas.setAttribute("tabindex", "0");
         canvas.addEventListener('keypress', function (evt) {
+            const speed = 10.0;
             switch (evt.charCode) {
-                case 43: /* + */ camera.transform.position.z -= deltaTime; break;
-                case 45: /* - */ camera.transform.position.z += deltaTime; break;
+                case 43: /* + */ camera.transform.position.z -= deltaTime * speed; break;
+                case 45: /* - */ camera.transform.position.z += deltaTime * speed; break;
             }
         }, true);
         canvas.addEventListener('keydown', function (evt) {
+            const speed = 10.0;
             switch (evt.keyCode) {
-                case 37: /* left */ camera.transform.position.x -= deltaTime; break;
-                case 38: /* up */ camera.transform.position.y += deltaTime; break;
-                case 39: /* right */ camera.transform.position.x += deltaTime; break;
-                case 40: /* down */ camera.transform.position.y -= deltaTime; break;
+                case 37: /* left */ camera.transform.position.x -= deltaTime * speed; break;
+                case 38: /* up */ camera.transform.position.y += deltaTime * speed; break;
+                case 39: /* right */ camera.transform.position.x += deltaTime * speed; break;
+                case 40: /* down */ camera.transform.position.y -= deltaTime * speed; break;
             }
+        }, true);
+
+        mouse = new Mouse();
+        canvas.addEventListener('mousemove', function (evt) {
+            mouse.Update(evt.clientX, evt.clientY);
         }, true);
 
         // game objects
@@ -153,14 +181,10 @@
             gizmos.push(go);
         }
 
-        function degr(degrees) {
-            var pi = Math.PI;
-            return degrees * (pi / 180);
-        }
         // tree
         {
             var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
-            go.transform.position = new Vec3(1.0, -1.6, 0.0);
+            go.transform.position = new Vec3(1.0, -1.6, -0.25);
             go.transform.rotEuler = new Vec3(degr(0.0), degr(0.0), degr(0.0));
             go.transform.scale = new Vec3(0.25, 1.0, 0.25);
             gameObjects.push(go);
@@ -189,6 +213,10 @@
     function update() {
         gameObjects[0].transform.rotEuler.y += deltaTime;
         gameObjects[1].transform.rotEuler.y += deltaTime;
+
+        const mouseSensitivity = 0.01;
+        camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
+        camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
     };
 
     function render() {
@@ -218,6 +246,8 @@
     main();
     function main() {
         var gl;
+        var mouse;
+
         var gameObjects;
         var gizmos;
         var camera;

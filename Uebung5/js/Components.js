@@ -42,15 +42,8 @@ class Transform {
                 -this.rotEuler.y,
                 -this.rotEuler.z);
 
-        // dont need this one; keeping it for completion sake, TBR in the furure
-        var scaleMat =
-            Matrix4x4.Scale(
-                this.scale.x,
-                this.scale.y,
-                this.scale.z);
-
         // first scale, then rotate, then translate
-        var res = Matrix4x4.Mul(Matrix4x4.Mul(scaleMat, rotationMat), translationMat);
+        var res = Matrix4x4.Mul(translationMat, rotationMat);
         res.SetAsUniform(shaderProgram, "viewMatVecs");
     }
 };
