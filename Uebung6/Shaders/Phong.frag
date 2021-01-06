@@ -1,30 +1,81 @@
 phongFS = `
     precision highp float;
+    
+    struct PointLight {
+        vec3 position;
+        vec3 color;
+        float intensity;
+    };
+
+    struct DirectionalLight {
+        vec3 direction;
+        vec3 color;
+        float intensity;
+    };
+
+    const int dirLightCount = 1;
+    const int pointLightCount = 2;
+    
+    uniform DirectionalLight directionalLights[dirLightCount];
+    uniform PointLight pointLights[pointLightCount];
+    uniform vec3 cameraPos;
+    uniform vec3 ambient;
 
     varying vec3 vWorldPos;
     varying vec3 vNormal;
     varying vec4 vColor;
-    varying vec3 vAmbientCol;
+
+    vec3 CalcDirectionalLightCol(DirectionalLight light) 
+    {
+        // diffuse
+        vec3 normal = normalize(vNormal);
+        vec3 lightDir = normalize(light.direction);
+        float diffuse = max(dot(normal, -lightDir), 0.0) * light.intensity;
+
+        // specular
+        vec3 camDir =  normalize(cameraPos - vWorldPos);
+        vec3 lightReflect = reflect(lightDir, normal);
+        const float specularIntensity = .5;
+        const float shininess = 20.0;
+        float specular = light.intensity * specularIntensity * pow(max(dot(lightReflect, camDir), 0.0), shininess);
+
+        return vColor.rgb * light.color * diffuse + light.color * specular;
+    }
+
+    vec3 CalcPointLightCol(PointLight light)
+    {
+        // diffuse
+        vec3 normal = normalize(vNormal);
+        vec3 lightVec = light.position - vWorldPos;
+        vec3 lightDir = normalize(lightVec);
+        
+        float dist = length(lightVec);
+        float attenuation = 1.0 / (0.1 + 0.1 * dist + 1.0 * dist * dist);
+        float diffuse = max(dot(normal, lightDir), 0.0) * attenuation * light.intensity;
+
+        // specular
+        vec3 camDir =  normalize(cameraPos - vWorldPos);
+        vec3 lightReflect = reflect(-lightDir, normal);
+        const float specularIntensity = .5;
+        const float shininess = 20.0;
+        float specular = light.intensity * specularIntensity * pow(max(dot(lightReflect, camDir), 0.0), shininess) * attenuation;
+
+        return vColor.rgb * light.color * diffuse + light.color * specular;
+    }
 
     void main() {
-        vec3 normal = normalize(vNormal);
-        vec3 lightDir = normalize(vec3(5.0, 5.0, 5.0) - vWorldPos);
-        float diffuse = max(dot(normal, lightDir), 0.0);
-        vec3 diffuseCol = vColor.rgb * diffuse;
+        vec3 resultCol = vec3(0.0, 0.0, 0.0);
 
-        //currently debug, later uniform
-        vec3 camPos = vec3(0.0, 0.0, -10.0);
-        vec3 lightColor = vec3(1.0, 1.0, 1.0);
-        float specularIntensity = .4;
-        float lightIntensity = 1.0;
-        float shininess = 30.0;
-        ////////
+        for(int i = 0; i < dirLightCount; ++i)
+        {
+            resultCol += CalcDirectionalLightCol(directionalLights[i]);
+        }
 
-        vec3 camDir =  normalize(camPos - vWorldPos);
-        vec3 lightReflect = reflect(lightDir, normal);
-        float specular = lightIntensity * specularIntensity * pow(max(dot(lightReflect, camDir), 0.0), shininess);
-        vec3 specularCol = lightColor * specular;
+        for(int i = 0; i < pointLightCount; ++i)
+        {
+            resultCol += CalcPointLightCol(pointLights[i]);
+        }
 
-        gl_FragColor = vec4(diffuseCol + specularCol + vAmbientCol, vColor.w);
+        gl_FragColor = vec4(resultCol + ambient, vColor.w);
     }
 `;

@@ -1,8 +1,9 @@
 phongVS = `
+    precision highp float;
+
     uniform vec4 modelMatVecs[4];
     uniform vec4 viewMatVecs[4];
     uniform vec4 perspMatVecs[4];
-    uniform vec3 ambient;
 
     attribute vec3 pos;
     attribute vec3 color;
@@ -11,7 +12,6 @@ phongVS = `
     varying vec3 vWorldPos;
     varying vec3 vNormal;
     varying vec4 vColor;
-    varying vec3 vAmbientCol;
 
     void main() {
         mat4 modelMat = mat4(
@@ -34,7 +34,6 @@ phongVS = `
 
         vColor = vec4(color, 1.0);
         vNormal = (modelMat * vec4(normal, 0.0)).xyz;
-        vAmbientCol = ambient;
 
         vec4 posOut = vec4(pos, 1.0);
         posOut = modelMat * posOut;

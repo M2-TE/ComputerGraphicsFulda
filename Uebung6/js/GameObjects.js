@@ -296,3 +296,57 @@ class Camera {
         this.perspectiveMat.SetAsUniform(shaderProgram, "perspMatVecs");
     }
 }
+
+class LightsManager {
+    constructor(gl) {
+        this.gl = gl;
+        this.dirLights = [];
+        this.pointLights = [];
+    }
+
+    AddPointLight(position, color, intensity) {
+        this.pointLights.push({
+            position: position,
+            color: color,
+            intensity: intensity,
+            enabled: true
+        });
+    }
+
+    AddDirectionalLight(direction, color, intensity) {
+        this.dirLights.push({
+            direction: direction,
+            color: color,
+            intensity: intensity,
+            enabled: true
+        });
+    }
+
+    Bind(shaderProgram) {
+        for (var i = 0, length = this.dirLights.length; i < length; ++i) {
+            const light = this.dirLights[i];
+
+            var directionLoc = shaderProgram.GetUnifLoc(`directionalLights[${i}].direction`);
+            this.gl.uniform3f(directionLoc, light.direction.x, light.direction.y, light.direction.z);
+
+            var colorLoc = shaderProgram.GetUnifLoc(`directionalLights[${i}].color`);
+            this.gl.uniform3f(colorLoc, light.color.x, light.color.y, light.color.z);
+
+            var intensityLoc = shaderProgram.GetUnifLoc(`directionalLights[${i}].intensity`);
+            this.gl.uniform1f(intensityLoc, light.enabled ? light.intensity : 0.0);
+        }
+
+        for (var i = 0, length = this.pointLights.length; i < length; ++i) {
+            const light = this.pointLights[i];
+
+            var positionLoc = shaderProgram.GetUnifLoc(`pointLights[${i}].position`);
+            this.gl.uniform3f(positionLoc, light.position.x, light.position.y, light.position.z);
+
+            var colorLoc = shaderProgram.GetUnifLoc(`pointLights[${i}].color`);
+            this.gl.uniform3f(colorLoc, light.color.x, light.color.y, light.color.z);
+
+            var intensityLoc = shaderProgram.GetUnifLoc(`pointLights[${i}].intensity`);
+            this.gl.uniform1f(intensityLoc, light.enabled ? light.intensity : 0.0);
+        }
+    }
+}

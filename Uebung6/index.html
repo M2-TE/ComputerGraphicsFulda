@@ -74,7 +74,7 @@
         camera.transform.position.z = 4;
 
         // shader program
-        var shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
+        shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
         shaderProgram.SetActive();
 
         // depth
@@ -97,12 +97,28 @@
         // set ambient color
         new Vec3(0.1, 0.1, 0.1).SetAsUniform(shaderProgram, "ambient");
 
+        // create lights
+        lights = new LightsManager(gl);
+        lights.AddDirectionalLight(new Vec3(-5.0, -5.0, -5.0), new Vec3(0.976, 0.843, 0.109), 0.4);
+        lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(1.0, 1.0, 1.0), 1.0);
+        lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(0.9, .2, .2), 1.0);
+        lights.Bind(shaderProgram);
+
+        mouse = new Mouse();
+        canvas.addEventListener('mousemove', function (evt) {
+            mouse.Update(evt.clientX, evt.clientY);
+        }, true);
+
         canvas.setAttribute("tabindex", "0");
         canvas.addEventListener('keypress', function (evt) {
             const speed = 10.0;
             switch (evt.charCode) {
                 case 43: /* + */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetFwd(deltaTime * - speed)); break;
                 case 45: /* - */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetFwd(deltaTime * speed)); break;
+                case 111:
+                case 79: /* "O": disable/enable red light */ lights.pointLights[1].enabled = !lights.pointLights[1].enabled; break;
+                case 112:
+                case 80: /* "P": disable/enable sun */ lights.dirLights[0].enabled = !lights.dirLights[0].enabled; break;
             }
         }, true);
         canvas.addEventListener('keydown', function (evt) {
@@ -115,10 +131,6 @@
             }
         }, true);
 
-        mouse = new Mouse();
-        canvas.addEventListener('mousemove', function (evt) {
-            mouse.Update(evt.clientX, evt.clientY);
-        }, true);
 
 
         // game objects
@@ -134,7 +146,7 @@
 
         // cube
         {
-            var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
+            var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.9, 0.2, 0.2));
             go.transform.position = new Vec3(1.0, 1.0, 0.0);
             go.transform.rotEuler = new Vec3(1.0, 0.0, 0.0);
             gameObjects.push(go);
@@ -142,7 +154,7 @@
 
         // sphere
         {
-            var go = ColGameObject.Sphere(gl, shaderProgram, 8, 8, new Vec3(1.0, 0.2, 0.2));
+            var go = ColGameObject.Sphere(gl, shaderProgram, 8, 8, new Vec3(0.9, 0.2, 0.2));
             go.transform.position = new Vec3(-1.0, 1.0, 0.0);
             go.transform.rotEuler = new Vec3(0.0, 0.0, 0.0);
             go.transform.scale = new Vec3(0.5, 0.5, 0.5);
@@ -211,11 +223,13 @@
 
     function update() {
         gameObjects[0].transform.rotEuler.y += deltaTime;
-        //gameObjects[1].transform.rotEuler.y += deltaTime;
+        lights.pointLights[0].position = camera.transform.position;
+        lights.Bind(shaderProgram);
 
-        const mouseSensitivity = 0.01;
-        //camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
-        //camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
+        // reenable for mouse movement
+        // const mouseSensitivity = 0.01;
+        // camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
+        // camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
     };
 
     function render() {
@@ -250,6 +264,8 @@
         var gameObjects;
         var gizmos;
         var camera;
+        var lights;
+        var shaderProgram;
 
         init();
 

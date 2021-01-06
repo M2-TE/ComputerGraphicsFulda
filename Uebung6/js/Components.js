@@ -45,6 +45,7 @@ class Transform {
         // first scale, then rotate, then translate
         var res = Matrix4x4.Mul(translationMat, rotationMat);
         res.SetAsUniform(shaderProgram, "viewMatVecs");
+        this.position.SetAsUniform(shaderProgram, "cameraPos");
     }
 };
 
