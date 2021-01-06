@@ -8,9 +8,9 @@ phongVS = `
     attribute vec3 color;
     attribute vec3 normal;
 
-    varying vec4 vColor;
-    varying vec4 vWorldPos;
+    varying vec3 vWorldPos;
     varying vec3 vNormal;
+    varying vec4 vColor;
     varying vec3 vAmbientCol;
 
     void main() {
@@ -37,8 +37,10 @@ phongVS = `
         vAmbientCol = ambient;
 
         vec4 posOut = vec4(pos, 1.0);
-        vWorldPos = modelMat * posOut;
-        posOut = viewMat * vWorldPos;
+        posOut = modelMat * posOut;
+        vWorldPos = posOut.xyz;
+
+        posOut = viewMat * posOut;
         posOut = perspMat * posOut;
         gl_Position = posOut;
     }
