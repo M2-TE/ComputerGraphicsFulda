@@ -47,3 +47,13 @@ class Transform {
         res.SetAsUniform(shaderProgram, "viewMatVecs");
     }
 };
+
+class Material {
+    constructor() {
+
+    }
+
+    Bind(shaderProgram) {
+
+    }
+}

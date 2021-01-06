@@ -128,6 +128,11 @@ class Vec3 {
         this.z = z;
     }
 
+    SetAsUniform(shaderProgram, uniformArrName) {
+        var loc = shaderProgram.GetUnifLoc(uniformArrName);
+        gl.uniform3f(loc, this.x, this.y, this.z);
+    }
+
     static Mul(mat, vec) {
         const x = mat.vals[0][0] * vec.x + mat.vals[0][1] * vec.y + mat.vals[0][2] * vec.z;
         const y = mat.vals[1][0] * vec.x + mat.vals[1][1] * vec.y + mat.vals[1][2] * vec.z;

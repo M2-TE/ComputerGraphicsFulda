@@ -7,11 +7,8 @@
 
 </html>
 
-<script src="Shaders/Default.vert"></script>
-<script src="Shaders/Default.frag"></script>
-
-<script src="Shaders/Textured.vert"></script>
-<script src="Shaders/Textured.frag"></script>
+<script src="Shaders/Phong.vert"></script>
+<script src="Shaders/Phong.frag"></script>
 
 <script src="js/Math.js"></script>
 <script src="js/GlWrappers.js"></script>
@@ -73,14 +70,12 @@
     function init() {
         gl = canvas.getContext('webgl', { alpha: true, depth: true });
 
-        var clockTex = loadTexture(gl);
-
         camera = new Camera(gl, 60, 0.001, 1000);
         camera.transform.position.z = 4;
 
         // shader program
-        var shaderProgram = new ShaderProgram(gl, defaultVS, defaultFS);
-        var texShaderProgram = new ShaderProgram(gl, texturedVS, texturedFS);
+        var shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
+        shaderProgram.SetActive();
 
         // depth
         gl.depthFunc(gl.LEQUAL);
@@ -98,6 +93,9 @@
         // transparency
         gl.enable(gl.BLEND)
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+        // set ambient color
+        new Vec3(0.1, 0.1, 0.1).SetAsUniform(shaderProgram, "ambient");
 
         canvas.setAttribute("tabindex", "0");
         canvas.addEventListener('keypress', function (evt) {
@@ -121,6 +119,7 @@
         canvas.addEventListener('mousemove', function (evt) {
             mouse.Update(evt.clientX, evt.clientY);
         }, true);
+
 
         // game objects
         gameObjects = [];
@@ -151,7 +150,7 @@
         }
 
         // coordinate gizmo
-        {
+        if (false) {
             var verts = [
                 0.0, 0.0, 0.0,
                 1.0, 0.0, 0.0,
@@ -182,7 +181,7 @@
         }
 
         // tree
-        {
+        if (false) {
             var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
             go.transform.position = new Vec3(1.0, -1.6, -0.25);
             go.transform.rotEuler = new Vec3(degr(0.0), degr(0.0), degr(0.0));
@@ -212,11 +211,11 @@
 
     function update() {
         gameObjects[0].transform.rotEuler.y += deltaTime;
-        gameObjects[1].transform.rotEuler.y += deltaTime;
+        //gameObjects[1].transform.rotEuler.y += deltaTime;
 
         const mouseSensitivity = 0.01;
-        camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
-        camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
+        //camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
+        //camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
     };
 
     function render() {
@@ -258,7 +257,7 @@
         deltaTime = 0;
 
         // initiate frame pass loop
-        renderLoop(0);
+        //renderLoop(0);
         function renderLoop(time) {
             totalTime = time;
             deltaTime = (time *= 0.001) - lastFrameTimestamp;

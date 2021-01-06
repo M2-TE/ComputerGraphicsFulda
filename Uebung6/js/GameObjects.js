@@ -3,6 +3,7 @@ class GameObject {
         this.gl = gl;
         this.shaderProgram = shaderProgram;
         this.transform = new Transform();
+        this.material = new Material();
     }
 
     Destroy() {
@@ -57,7 +58,7 @@ class TexGameObject extends GameObject {
 
 class ColGameObject extends GameObject {
 
-    AssignVerts(vertices, colors, indices) {
+    AssignVerts(vertices, colors, normals, indices) {
         this.indexCount = indices.length;
 
         this.posBuffer = new ConstantBuffer(this.gl,
@@ -74,6 +75,13 @@ class ColGameObject extends GameObject {
             1, // "color"
             this.gl.FLOAT, 3);
 
+        this.normBuffer = new ConstantBuffer(this.gl,
+            this.gl.ARRAY_BUFFER,
+            new Float32Array(normals),
+            this.gl.STATIC_DRAW,
+            2, // "normal"
+            this.gl.FLOAT, 3);
+
         this.indexBuffer = new ConstantBuffer(this.gl,
             this.gl.ELEMENT_ARRAY_BUFFER,
             new Uint16Array(indices),
@@ -85,34 +93,128 @@ class ColGameObject extends GameObject {
         const unit = 0.5;
         const pnit = -0.5;
 
+        const zero = 0.0;
+        const one = 1.0;
+
         var verts = [
-            pnit, unit, unit,
+            // top
+            pnit, unit, unit, // 0
+            unit, unit, unit, // 1
+            pnit, unit, pnit, // 2
+            unit, unit, pnit, // 3
+
+            // bot
+            pnit, pnit, unit, // 4
+            unit, pnit, unit, // 5
+            pnit, pnit, pnit, // 6
+            unit, pnit, pnit, // 7
+
+            // rgt
             unit, unit, unit,
-            pnit, unit, pnit,
+            unit, pnit, unit,
             unit, unit, pnit,
+            unit, pnit, pnit,
+
+            // lft
+            pnit, pnit, unit,
+            pnit, unit, unit,
+            pnit, pnit, pnit,
+            pnit, unit, pnit,
+
+            // fwd
             pnit, pnit, unit,
             unit, pnit, unit,
+            pnit, unit, unit,
+            unit, unit, unit,
+
+            // bwd
+            pnit, unit, pnit,
+            unit, unit, pnit,
             pnit, pnit, pnit,
-            unit, pnit, pnit];
+            unit, pnit, pnit,
+        ];
+
         var cols = [
             color.x, color.y, color.z,
             color.x, color.y, color.z,
             color.x, color.y, color.z,
             color.x, color.y, color.z,
+
             color.x, color.y, color.z,
             color.x, color.y, color.z,
             color.x, color.y, color.z,
-            color.x, color.y, color.z];
+            color.x, color.y, color.z,
+
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+            color.x, color.y, color.z,
+        ];
+
+        var normals = [
+            // top
+            zero, one, zero,
+            zero, one, zero,
+            zero, one, zero,
+            zero, one, zero,
+
+            // bot
+            zero, -one, zero,
+            zero, -one, zero,
+            zero, -one, zero,
+            zero, -one, zero,
+
+            // rgt
+            one, zero, zero,
+            one, zero, zero,
+            one, zero, zero,
+            one, zero, zero,
+
+            // lft
+            -one, zero, zero,
+            -one, zero, zero,
+            -one, zero, zero,
+            -one, zero, zero,
+
+            // fwd
+            zero, zero, one,
+            zero, zero, one,
+            zero, zero, one,
+            zero, zero, one,
+
+            // bwd
+            zero, zero, -one,
+            zero, zero, -one,
+            zero, zero, -one,
+            zero, zero, -one,
+        ];
+
         var indices = [
             0, 1, 2, 1, 3, 2, // top
             4, 6, 5, 6, 7, 5, // bot
-            2, 3, 6, 3, 7, 6, // fwd
-            1, 0, 5, 0, 4, 5, // bwd
-            3, 1, 7, 1, 5, 7, // right
-            0, 2, 4, 2, 6, 4];// left
+            8, 9, 10, 9, 11, 10, // rgt
+            12, 13, 14, 13, 15, 14, // lft
+            16, 17, 18, 17, 19, 18, // fwd
+            20, 21, 22, 21, 23, 22 // bwd
+        ];
 
         var go = new ColGameObject(gl, shaderProgram);
-        go.AssignVerts(verts, cols, indices);
+        go.AssignVerts(verts, cols, normals, indices);
         return go;
     }
 
@@ -120,6 +222,7 @@ class ColGameObject extends GameObject {
         const nLongP = nLong + 1, nLatiP = nLati + 1;
         var verts = [];
         var cols = [];
+        var normals = [];
         var indices = [];
 
         for (var lati = 0; lati < nLatiP; ++lati) {
@@ -128,7 +231,8 @@ class ColGameObject extends GameObject {
                 const y = Math.sin(Math.PI * lati / nLati) * Math.sin(2 * Math.PI * long / nLong);
                 const z = Math.cos(Math.PI * lati / nLati);
                 verts.push(x, y, z);
-                cols.push(1.0, 0.2, 0.2);
+                normals.push(x, y, z);
+                cols.push(color.x, color.y, color.z); // actually using the input color now
             }
         }
         for (var lati = 0; lati < nLati; ++lati) {
@@ -144,7 +248,7 @@ class ColGameObject extends GameObject {
         }
 
         var go = new ColGameObject(gl, shaderProgram);
-        go.AssignVerts(verts, cols, indices);
+        go.AssignVerts(verts, cols, normals, indices);
         return go;
     }
 
@@ -154,6 +258,7 @@ class ColGameObject extends GameObject {
         camera.Bind(this.shaderProgram);
         this.posBuffer.Bind();
         this.colBuffer.Bind();
+        this.normBuffer.Bind();
         this.indexBuffer.Bind();
         this.transform.Bind(this.shaderProgram);
         gl.drawElements(drawMode, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
