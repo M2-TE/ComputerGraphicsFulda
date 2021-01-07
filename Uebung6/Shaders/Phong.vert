@@ -8,10 +8,12 @@ phongVS = `
     attribute vec3 pos;
     attribute vec3 color;
     attribute vec3 normal;
+    attribute vec2 texCoord;
 
     varying vec3 vWorldPos;
     varying vec3 vNormal;
     varying vec4 vColor;
+    varying vec2 vTexCoord;
 
     void main() {
         mat4 modelMat = mat4(
@@ -34,13 +36,13 @@ phongVS = `
 
         vColor = vec4(color, 1.0);
         vNormal = (modelMat * vec4(normal, 0.0)).xyz;
+        vTexCoord = texCoord;
 
-        vec4 posOut = vec4(pos, 1.0);
-        posOut = modelMat * posOut;
-        vWorldPos = posOut.xyz;
+        gl_Position = vec4(pos, 1.0);
+        gl_Position = modelMat * gl_Position;
+        vWorldPos = gl_Position.xyz;
 
-        posOut = viewMat * posOut;
-        posOut = perspMat * posOut;
-        gl_Position = posOut;
+        gl_Position = viewMat * gl_Position;
+        gl_Position = perspMat * gl_Position;
     }
 `;

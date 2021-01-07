@@ -13,6 +13,66 @@ class GameObject {
     }
 }
 
+class ObjGameObject extends GameObject {
+    PassMeshData(mesh, texture) {
+        this.texture = texture;
+        this.indexCount = mesh.indices.length;
+
+        this.posBuffer = new ConstantBuffer(this.gl,
+            this.gl.ARRAY_BUFFER,
+            new Float32Array(mesh.vertices),
+            this.gl.STATIC_DRAW,
+            0, // "pos"
+            this.gl.FLOAT, 3);
+
+        var cols = [mesh.vertices.length];
+        for (var i = 0; i < mesh.vertices.length; ++i) cols[i] = 0.0;
+        this.colBuffer = new ConstantBuffer(this.gl,
+            this.gl.ARRAY_BUFFER,
+            new Float32Array(cols),
+            this.gl.STATIC_DRAW,
+            1, // "color"
+            this.gl.FLOAT, 3);
+
+        this.normBuffer = new ConstantBuffer(this.gl,
+            this.gl.ARRAY_BUFFER,
+            new Float32Array(mesh.vertexNormals),
+            this.gl.STATIC_DRAW,
+            2, // "normal"
+            this.gl.FLOAT, 3);
+
+        this.texCoordBuffer = new ConstantBuffer(this.gl,
+            this.gl.ARRAY_BUFFER,
+            new Float32Array(mesh.textures),
+            this.gl.STATIC_DRAW,
+            3, // "texCoord"
+            this.gl.FLOAT, 2);
+
+        this.indexBuffer = new ConstantBuffer(this.gl,
+            this.gl.ELEMENT_ARRAY_BUFFER,
+            new Uint16Array(mesh.indices),
+            this.gl.STATIC_DRAW);
+    }
+
+    Draw(camera, drawMode) {
+        this.shaderProgram.SetActive();
+
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+        var loc = this.shaderProgram.GetUnifLoc('texSampler');
+        this.gl.uniform1i(loc, 0);
+
+        camera.Bind(this.shaderProgram);
+        this.posBuffer.Bind();
+        this.colBuffer.Bind();
+        this.normBuffer.Bind();
+        this.texCoordBuffer.Bind();
+        this.indexBuffer.Bind();
+        this.transform.Bind(this.shaderProgram);
+        gl.drawElements(drawMode, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
+    }
+}
+
 class TexGameObject extends GameObject {
 
     AssignVerts(vertices, texCoord, indices) {
@@ -81,6 +141,15 @@ class ColGameObject extends GameObject {
             this.gl.STATIC_DRAW,
             2, // "normal"
             this.gl.FLOAT, 3);
+
+        var fakeUvs = [vertices.length];
+        for (var i = 0; i < vertices.length; ++i) fakeUvs[i] = -2.0;
+        this.texCoordBuffer = new ConstantBuffer(this.gl,
+            this.gl.ARRAY_BUFFER,
+            new Float32Array(fakeUvs),
+            this.gl.STATIC_DRAW,
+            3, // "texCoord"
+            this.gl.FLOAT, 2);
 
         this.indexBuffer = new ConstantBuffer(this.gl,
             this.gl.ELEMENT_ARRAY_BUFFER,
@@ -259,6 +328,7 @@ class ColGameObject extends GameObject {
         this.posBuffer.Bind();
         this.colBuffer.Bind();
         this.normBuffer.Bind();
+        this.texCoordBuffer.Bind();
         this.indexBuffer.Bind();
         this.transform.Bind(this.shaderProgram);
         gl.drawElements(drawMode, this.indexCount, this.gl.UNSIGNED_SHORT, 0);

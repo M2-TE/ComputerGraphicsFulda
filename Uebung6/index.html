@@ -7,9 +7,12 @@
 
 </html>
 
+<script type="text/plain" src="objs/cardboardBox/CardboardBox.obj" id="cardboardBox.obj"></script>
+
 <script src="Shaders/Phong.vert"></script>
 <script src="Shaders/Phong.frag"></script>
 
+<script src="node_modules/webgl-obj-loader/dist/webgl-obj-loader.js"></script>
 <script src="js/Math.js"></script>
 <script src="js/GlWrappers.js"></script>
 <script src="js/GameObjects.js"></script>
@@ -34,7 +37,7 @@
         }
     }
 
-    function loadTexture(gl) {
+    function loadTexture(gl, path) {
         var texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
 
@@ -58,7 +61,7 @@
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             }
         }
-        image.src = "Textures/ClockFace.png";
+        image.src = path;
 
         return texture;
     }
@@ -132,7 +135,6 @@
         }, true);
 
 
-
         // game objects
         gameObjects = [];
         gizmos = [];
@@ -143,6 +145,22 @@
         * which each object uploads its data to on every draw call
         * -> dynamic buffer usage
         */
+
+        // obj
+        {
+            fetch('objs/Mug.obj')
+                .then(response => response.text())
+                .then((data) => {
+                    var mesh = new OBJ.Mesh(data);
+                    var go = new ObjGameObject(gl, shaderProgram);
+
+                    var texture = loadTexture(gl, "objs/Mug_BaseColor.png");
+                    go.PassMeshData(mesh, texture);
+                    go.transform.position = new Vec3(0.0, -2.0, 0.0);
+                    go.transform.scale = new Vec3(.5, .5, .5);
+                    gameObjects.push(go);
+                });
+        }
 
         // cube
         {
@@ -160,65 +178,6 @@
             go.transform.scale = new Vec3(0.5, 0.5, 0.5);
             gameObjects.push(go);
         }
-
-        // coordinate gizmo
-        if (false) {
-            var verts = [
-                0.0, 0.0, 0.0,
-                1.0, 0.0, 0.0,
-
-                0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0,
-
-                0.0, 0.0, 0.0,
-                0.0, 0.0, 1.0];
-            var cols = [
-                1.0, 0.0, 0.0,
-                1.0, 0.0, 0.0,
-
-                0.0, 1.0, 0.0,
-                0.0, 1.0, 0.0,
-
-                0.0, 0.0, 1.0,
-                0.0, 0.0, 1.0];
-            var indices = [
-                0, 1, 0,
-                2, 3, 2,
-                4, 5, 4];
-            var go = new ColGameObject(gl, shaderProgram);
-            go.AssignVerts(verts, cols, indices);
-            go.transform.position = new Vec3(-1.0, -1.0, 0.0);
-            go.transform.rotEuler = new Vec3(0.0, 0.0, 0.0);
-            gizmos.push(go);
-        }
-
-        // tree
-        if (false) {
-            var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
-            go.transform.position = new Vec3(1.0, -1.6, -0.25);
-            go.transform.rotEuler = new Vec3(degr(0.0), degr(0.0), degr(0.0));
-            go.transform.scale = new Vec3(0.25, 1.0, 0.25);
-            gameObjects.push(go);
-
-            go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
-            go.transform.position = new Vec3(1.0, -1.0, -0.5);
-            go.transform.rotEuler = new Vec3(degr(60.0), degr(0.0), degr(0.0));
-            go.transform.scale = new Vec3(0.25, 1.0, 0.25);
-            gameObjects.push(go);
-
-            go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
-            go.transform.position = new Vec3(1.5, -1.0, 0.0);
-            go.transform.rotEuler = new Vec3(degr(60.0), degr(120.0), degr(0.0));
-            go.transform.scale = new Vec3(0.25, 1.0, 0.25);
-            gameObjects.push(go);
-
-            go = ColGameObject.Cube(gl, shaderProgram, new Vec3(1.0, 0.2, 0.2));
-            go.transform.position = new Vec3(0.5, -1.0, 0.0);
-            go.transform.rotEuler = new Vec3(degr(60.0), degr(240.0), degr(0.0));
-            go.transform.scale = new Vec3(0.25, 1.0, 0.25);
-            gameObjects.push(go);
-        }
-
     };
 
     function update() {
@@ -234,7 +193,6 @@
 
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
         for (var i = 0; i < gameObjects.length; ++i) {
             gameObjects[i].Draw(camera, this.gl.TRIANGLES);
         }

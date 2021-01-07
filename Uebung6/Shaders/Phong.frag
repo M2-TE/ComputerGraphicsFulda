@@ -16,6 +16,7 @@ phongFS = `
     const int dirLightCount = 1;
     const int pointLightCount = 2;
     
+    uniform sampler2D texSampler;
     uniform DirectionalLight directionalLights[dirLightCount];
     uniform PointLight pointLights[pointLightCount];
     uniform vec3 cameraPos;
@@ -24,8 +25,9 @@ phongFS = `
     varying vec3 vWorldPos;
     varying vec3 vNormal;
     varying vec4 vColor;
+    varying vec2 vTexCoord;
 
-    vec3 CalcDirectionalLightCol(DirectionalLight light) 
+    vec3 CalcDirectionalLightCol(DirectionalLight light, vec3 color) 
     {
         // diffuse
         vec3 normal = normalize(vNormal);
@@ -39,10 +41,10 @@ phongFS = `
         const float shininess = 20.0;
         float specular = light.intensity * specularIntensity * pow(max(dot(lightReflect, camDir), 0.0), shininess);
 
-        return vColor.rgb * light.color * diffuse + light.color * specular;
+        return color * light.color * diffuse + light.color * specular;
     }
 
-    vec3 CalcPointLightCol(PointLight light)
+    vec3 CalcPointLightCol(PointLight light, vec3 color)
     {
         // diffuse
         vec3 normal = normalize(vNormal);
@@ -60,22 +62,29 @@ phongFS = `
         const float shininess = 20.0;
         float specular = light.intensity * specularIntensity * pow(max(dot(lightReflect, camDir), 0.0), shininess) * attenuation;
 
-        return vColor.rgb * light.color * diffuse + light.color * specular;
+        return color * light.color * diffuse + light.color * specular;
     }
 
     void main() {
         vec3 resultCol = vec3(0.0, 0.0, 0.0);
 
+        vec3 color = vec3(0.0, 0.0, 0.0);
+        if (vTexCoord.x > -1.0) {
+            color = texture2D(texSampler, vTexCoord).rgb;
+        } else {
+            color = vColor.rgb;
+        }
+
         for(int i = 0; i < dirLightCount; ++i)
         {
-            resultCol += CalcDirectionalLightCol(directionalLights[i]);
+            resultCol += CalcDirectionalLightCol(directionalLights[i], color);
         }
 
         for(int i = 0; i < pointLightCount; ++i)
         {
-            resultCol += CalcPointLightCol(pointLights[i]);
+            resultCol += CalcPointLightCol(pointLights[i], color);
         }
 
-        gl_FragColor = vec4(resultCol + ambient, vColor.w);
+        gl_FragColor = vec4(resultCol + ambient, vColor.a);
     }
 `;
