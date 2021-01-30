@@ -420,3 +420,19 @@ class LightsManager {
         }
     }
 }
+
+class Mouse {
+    constructor() {
+        this.x = 0.0;
+        this.y = 0.0;
+        this.xDelta = 0.0;
+        this.yDelta = 0.0;
+    }
+
+    Update(xMouse, yMouse) {
+        // this.xDelta = xMouse - this.x;
+        // this.yDelta = yMouse - this.y;
+        this.x = xMouse;
+        this.y = yMouse;
+    }
+}

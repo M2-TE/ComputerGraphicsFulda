@@ -1,3 +1,7 @@
+function degr(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
 class Matrix4x4 {
     constructor(a, b, c, d) {
         this.vals = [a, b, c, d];
