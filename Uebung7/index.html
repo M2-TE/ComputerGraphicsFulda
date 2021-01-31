@@ -41,6 +41,9 @@
         shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
         shaderProgram.SetActive();
 
+        // blending
+        gl.enable(gl.BLEND)
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         // depth
         gl.depthFunc(gl.LEQUAL);
@@ -56,9 +59,6 @@
         // viewport
         gl.viewport(0, 0, canvas.width, canvas.height);
 
-        // enable blending
-        gl.enable(gl.BLEND)
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         // set ambient color
         new Vec3(0.1, 0.1, 0.1).SetAsUniform(shaderProgram, "ambient");
@@ -147,6 +147,14 @@
             go.transform.position = new Vec3(0.0, -3.0, 0.0);
             go.transform.scale = new Vec3(30.0, 0.1, 30.0);
             gameObjects.push(go);
+        }
+
+        // transparent tex thing
+        {
+            var go = new ObjGameObject(gl, shaderProgram);
+            var mesh;
+            //go.PassMeshData(mesh, loadTexture(gl, "Textures/ClockFace.png"));
+            //gameObjects.push(go);
         }
     };
 

@@ -33,7 +33,6 @@ class Matrix4x4 {
     static Orthographic(lft, rgt, top, bot, nearClip, farClip) {
         var a = 2 / (rgt - lft);
         var b = 2 / (top - bot);
-        //var c = -(farClip / (farClip - nearClip));
         var c = -2 / (farClip - nearClip);
         var d = -((farClip + nearClip) / (farClip - nearClip));
         var v = -((rgt + lft) / (rgt - lft));

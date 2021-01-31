@@ -418,7 +418,6 @@ class LightsManager {
         transform.position.y = 6;
 
         var viewPerspMat = Matrix4x4.Mul(transform.GetLightMatrix(), perspectiveMat);
-        //var viewPerspMat = Matrix4x4.Mul(perspectiveMat, transform.GetLightMatrix());
 
         // create depth texture
         var dim = 512;
