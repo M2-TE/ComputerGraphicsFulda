@@ -11,6 +11,8 @@ phongFS = `
         vec3 direction;
         vec3 color;
         float intensity;
+        float shadowmapDim;
+        vec4 viewPerspMatVecs[4];
     };
 
     const int dirLightCount = 1;
@@ -29,6 +31,19 @@ phongFS = `
 
     vec3 CalcDirectionalLightCol(DirectionalLight light, vec3 color) 
     {
+        // shadow
+        mat4 viewPerspMat = mat4(
+            light.viewPerspMatVecs[0],
+            light.viewPerspMatVecs[1],
+            light.viewPerspMatVecs[2],
+            light.viewPerspMatVecs[3]);
+
+        vec4 fragCoordLight = viewPerspMat * vec4(vWorldPos, 1.0);
+        float texDim = light.shadowmapDim;
+        vec2 uv = vec2((fragCoordLight.x + 1.0) / 2.0, (fragCoordLight.y + 1.0) / 2.0);
+        float lightDepth = texture2D(texSampler[1], uv).x;
+        if(lightDepth < fragCoordLight.z) return vec3(0.0, 0.0, 0.0);
+
         // diffuse
         vec3 normal = normalize(vNormal);
         vec3 lightDir = normalize(light.direction);
@@ -86,11 +101,5 @@ phongFS = `
         }
 
         gl_FragColor = vec4(resultCol + ambient, vColor.a);
-
-        float u = gl_FragCoord.x / 400.0;
-        float v = 1.0 - gl_FragCoord.y / 400.0;
-        vec2 uv = vec2(u, v);
-        color = texture2D(texSampler[1], uv).rgb;
-        gl_FragColor = vec4(color, 1.0);
     }
 `;

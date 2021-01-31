@@ -411,11 +411,14 @@ class LightsManager {
         var bot = -top;
         var rgt = 10;
         var lft = -rgt;
-        var perspectiveMat = Matrix4x4.Orthographic(lft, rgt, top, bot, 0.001, 1000);
+        var perspectiveMat = Matrix4x4.Orthographic(lft, rgt, top, bot, 0.001, 10);
 
         var transform = new Transform();
         transform.rotEuler.x = degr(90);
-        transform.position.y = 3.0;
+        transform.position.y = 6;
+
+        var viewPerspMat = Matrix4x4.Mul(transform.GetLightMatrix(), perspectiveMat);
+        //var viewPerspMat = Matrix4x4.Mul(perspectiveMat, transform.GetLightMatrix());
 
         // create depth texture
         var dim = 512;
@@ -451,6 +454,7 @@ class LightsManager {
             fbo: fbo,
             shadowmap: tex,
             perspectiveMat: perspectiveMat,
+            viewPerspMat: viewPerspMat,
             direction: direction,
             color: color,
             intensity: intensity,
@@ -479,13 +483,17 @@ class LightsManager {
     }
 
     Bind(shaderProgram) {
-
+        var activeTextures = [0]; // reserve a texture spot for textured objects
         for (var i = 0, length = this.dirLights.length; i < length; ++i) {
             const light = this.dirLights[i];
 
             // bind shadow texture
-            this.gl.activeTexture(this.gl.TEXTURE1);
+            this.gl.activeTexture(this.gl.TEXTURE0 + i + 1);
             this.gl.bindTexture(this.gl.TEXTURE_2D, light.shadowmap);
+            activeTextures.push(activeTextures.length);
+
+            // bind perspective matrix to calculate fragment pos from light's pov
+            light.viewPerspMat.SetAsUniform(shaderProgram, `directionalLights[${i}].viewPerspMatVecs`);
 
             var directionLoc = shaderProgram.GetUnifLoc(`directionalLights[${i}].direction`);
             this.gl.uniform3f(directionLoc, light.direction.x, light.direction.y, light.direction.z);
@@ -495,6 +503,9 @@ class LightsManager {
 
             var intensityLoc = shaderProgram.GetUnifLoc(`directionalLights[${i}].intensity`);
             this.gl.uniform1f(intensityLoc, light.enabled ? light.intensity : 0.0);
+
+            var shadowmapDimLoc = shaderProgram.GetUnifLoc(`directionalLights[${i}].shadowmapDim`);
+            this.gl.uniform1f(shadowmapDimLoc, light.shadowDim);
         }
 
         for (var i = 0, length = this.pointLights.length; i < length; ++i) {
@@ -512,7 +523,7 @@ class LightsManager {
 
         // assign the number of tex samplers to use
         var loc = shaderProgram.GetUnifLoc('texSampler');
-        this.gl.uniform1iv(loc, [0, 1]);
+        this.gl.uniform1iv(loc, activeTextures);
     }
 }
 

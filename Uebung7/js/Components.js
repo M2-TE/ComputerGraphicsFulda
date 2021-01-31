@@ -63,6 +63,22 @@ class Transform {
         var res = Matrix4x4.Mul(translationMat, rotationMat);
         res.SetAsUniform(shaderProgram, "viewMatVecs");
     }
+
+    GetLightMatrix() {
+        var translationMat =
+            Matrix4x4.Translation(
+                -this.position.x,
+                -this.position.y,
+                -this.position.z);
+
+        var rotationMat =
+            Matrix4x4.EulerRotationInv(
+                -this.rotEuler.x,
+                -this.rotEuler.y,
+                -this.rotEuler.z);
+
+        return Matrix4x4.Mul(translationMat, rotationMat);
+    }
 };
 
 class Material {

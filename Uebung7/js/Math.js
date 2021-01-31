@@ -22,7 +22,7 @@ class Matrix4x4 {
     static Perspective(fov, nearClip, farClip) {
         var fovMod = 1 / Math.tan((fov / 2) * (Math.PI / 180));
         var clipA = -(farClip / (farClip - nearClip));
-        var clipB = -((farClip * nearClip) / (farClip - nearClip));
+        var clipB = -((farClip + nearClip) / (farClip - nearClip));
         var colA = [fovMod, 0, 0, 0];
         var colB = [0, fovMod, 0, 0];
         var colC = [0, 0, clipA, -1];
@@ -33,14 +33,11 @@ class Matrix4x4 {
     static Orthographic(lft, rgt, top, bot, nearClip, farClip) {
         var a = 2 / (rgt - lft);
         var b = 2 / (top - bot);
+        //var c = -(farClip / (farClip - nearClip));
         var c = -2 / (farClip - nearClip);
         var d = -((farClip + nearClip) / (farClip - nearClip));
         var v = -((rgt + lft) / (rgt - lft));
         var h = -((top + bot) / (top - bot));
-        //var colA = [a, 0, 0, v];
-        //var colB = [0, b, 0, h];
-        //var colC = [0, 0, c, d];
-        //var colD = [0, 0, 0, 1];
 
         var colA = [a, 0, 0, 0];
         var colB = [0, b, 0, 0];

@@ -155,22 +155,23 @@
         // lights.pointLights[0].position = camera.transform.position;
         lights.Bind(shaderProgram);
 
-
         // reenable for mouse movement
         const mouseSensitivity = 0.01;
-        //camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
+        camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
         camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
     };
 
     function render() {
         lights.RenderShadows(shadowMappingProgram, gameObjects, camera);
 
-        shaderProgram.SetActive();
-        this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        for (var i = 0; i < gameObjects.length; ++i) {
-            gameObjects[i].Draw(camera, this.gl.TRIANGLES);
+        if (true) {
+            shaderProgram.SetActive();
+            this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            for (var i = 0; i < gameObjects.length; ++i) {
+                gameObjects[i].Draw(camera, this.gl.TRIANGLES);
+            }
         }
 
         // for (var i = 0; i < gizmos.length; ++i) {
