@@ -11,6 +11,8 @@
 
 <script src="Shaders/Phong.vert"></script>
 <script src="Shaders/Phong.frag"></script>
+<script src="Shaders/DirShadows.vert"></script>
+<script src="Shaders/DirShadows.frag"></script>
 
 <script src="node_modules/webgl-obj-loader/dist/webgl-obj-loader.js"></script>
 <script src="js/Math.js"></script>
@@ -20,6 +22,10 @@
 
 <script>
     var canvas = document.getElementById('c');
+    var totalTime;
+    var deltaTime;
+    var shaderProgram;
+    var shadowMappingProgram;
 
     function init() {
         gl = canvas.getContext('webgl', { alpha: true, depth: true });
@@ -27,15 +33,19 @@
         camera = new Camera(gl, 60, 0.001, 1000);
         camera.transform.position.z = 4;
 
-        // shader program
-        shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
+        // shader programs
+        shaderProgram = new ShaderProgram(gl, dirShadowsVS, dirShadowsFS);
+        //shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
+        // shadowMappingProgram.SetActive();
         shaderProgram.SetActive();
+
 
         // depth
         gl.depthFunc(gl.LEQUAL);
         gl.enable(gl.DEPTH_TEST);
         gl.clearDepth(1.0);
         gl.depthMask(true);
+        gl.depthRange(0.0, 1.0);
 
         // color
         gl.clearColor(0.3, 0.3, 0.3, 1.0);
@@ -44,7 +54,7 @@
         // viewport
         gl.viewport(0, 0, canvas.width, canvas.height);
 
-        // transparency
+        // enable blending
         gl.enable(gl.BLEND)
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -53,9 +63,9 @@
 
         // create lights
         lights = new LightsManager(gl);
-        lights.AddDirectionalLight(new Vec3(-5.0, -5.0, -5.0), new Vec3(0.976, 0.843, 0.109), 0.4);
-        lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(1.0, 1.0, 1.0), 1.0);
-        lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(0.9, .2, .2), 1.0);
+        lights.AddDirectionalLight(new Vec3(0.0, -5.0, 0.0), new Vec3(1.0, 1.0, 1.0), 0.5);
+        // lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(1.0, 1.0, 1.0), 1.0);
+        // lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(0.9, .2, .2), 1.0);
         lights.Bind(shaderProgram);
 
         mouse = new Mouse();
@@ -84,7 +94,6 @@
                 case 40: /* down */ camera.transform.position = Vec3.Add(camera.transform.position, camera.GetUp(deltaTime * - speed)); break;
             }
         }, true);
-
 
         // game objects
         gameObjects = [];
@@ -129,28 +138,42 @@
             go.transform.scale = new Vec3(0.5, 0.5, 0.5);
             gameObjects.push(go);
         }
+
+        // ground
+        {
+            var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.9, 0.2, 0.2));
+            go.transform.position = new Vec3(0.0, -3.0, 0.0);
+            go.transform.scale = new Vec3(30.0, 0.1, 30.0);
+            gameObjects.push(go);
+        }
     };
 
     function update() {
         gameObjects[0].transform.rotEuler.y += deltaTime;
-        lights.pointLights[0].position = camera.transform.position;
+        // lights.pointLights[0].position = camera.transform.position;
         lights.Bind(shaderProgram);
 
+        camera.transform.rotEuler.x = degr(90);
+        camera.transform.position.y = 3.0;
+        camera.transform.position.z = 0.0;
+
         // reenable for mouse movement
-        // const mouseSensitivity = 0.01;
-        // camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
-        // camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
+        const mouseSensitivity = 0.01;
+        //camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
+        //camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
     };
 
     function render() {
+        shaderProgram.SetActive();
+
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         for (var i = 0; i < gameObjects.length; ++i) {
             gameObjects[i].Draw(camera, this.gl.TRIANGLES);
         }
 
-        for (var i = 0; i < gizmos.length; ++i) {
-            gizmos[i].Draw(camera, this.gl.LINES);
-        }
+        // for (var i = 0; i < gizmos.length; ++i) {
+        //     gizmos[i].Draw(camera, this.gl.LINES);
+        // }
     };
 
     function shutdown() {
@@ -163,8 +186,6 @@
         }
     };
 
-    var totalTime;
-    var deltaTime;
     main();
     function main() {
         var gl;
@@ -174,7 +195,6 @@
         var gizmos;
         var camera;
         var lights;
-        var shaderProgram;
 
         init();
 

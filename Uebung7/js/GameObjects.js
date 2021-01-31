@@ -339,7 +339,12 @@ class Camera {
     constructor(gl, fov, nearClip, farClip) {
         this.gl = gl;
         this.transform = new Transform();
-        this.perspectiveMat = Matrix4x4.Perspective(fov, nearClip, farClip);
+        //this.perspectiveMat = Matrix4x4.Perspective(fov, nearClip, farClip);
+        var top = 10;
+        var bot = -top;
+        var rgt = 10;
+        var lft = -rgt;
+        this.perspectiveMat = Matrix4x4.Orthographic(lft, rgt, top, bot, nearClip, farClip);
     }
 
 

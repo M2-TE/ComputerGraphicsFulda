@@ -30,6 +30,25 @@ class Matrix4x4 {
         return new Matrix4x4(colA, colB, colC, colD);
     }
 
+    static Orthographic(lft, rgt, top, bot, nearClip, farClip) {
+        var a = 2 / (rgt - lft);
+        var b = 2 / (top - bot);
+        var c = -2 / (farClip - nearClip);
+        var d = -((farClip + nearClip) / (farClip - nearClip));
+        var v = -((rgt + lft) / (rgt - lft));
+        var h = -((top + bot) / (top - bot));
+        //var colA = [a, 0, 0, v];
+        //var colB = [0, b, 0, h];
+        //var colC = [0, 0, c, d];
+        //var colD = [0, 0, 0, 1];
+
+        var colA = [a, 0, 0, 0];
+        var colB = [0, b, 0, 0];
+        var colC = [0, 0, c, 0];
+        var colD = [v, h, d, 1];
+        return new Matrix4x4(colA, colB, colC, colD);
+    }
+
     static Translation(x, y, z) {
         var colA = [1, 0, 0, 0];
         var colB = [0, 1, 0, 0];
