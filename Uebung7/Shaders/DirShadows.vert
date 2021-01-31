@@ -6,9 +6,6 @@ dirShadowsVS = `
     uniform vec4 perspMatVecs[4];
 
     attribute vec3 pos;
-    attribute vec3 color;
-    attribute vec3 normal;
-    attribute vec2 texCoord;
 
     void main() {
         mat4 modelMat = mat4(

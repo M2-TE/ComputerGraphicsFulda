@@ -42,10 +42,26 @@ class Transform {
                 -this.rotEuler.y,
                 -this.rotEuler.z);
 
-        // first scale, then rotate, then translate
         var res = Matrix4x4.Mul(translationMat, rotationMat);
         res.SetAsUniform(shaderProgram, "viewMatVecs");
         this.position.SetAsUniform(shaderProgram, "cameraPos");
+    }
+
+    BindAsLight(shaderProgram) {
+        var translationMat =
+            Matrix4x4.Translation(
+                -this.position.x,
+                -this.position.y,
+                -this.position.z);
+
+        var rotationMat =
+            Matrix4x4.EulerRotationInv(
+                -this.rotEuler.x,
+                -this.rotEuler.y,
+                -this.rotEuler.z);
+
+        var res = Matrix4x4.Mul(translationMat, rotationMat);
+        res.SetAsUniform(shaderProgram, "viewMatVecs");
     }
 };
 

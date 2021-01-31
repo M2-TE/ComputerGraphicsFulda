@@ -34,9 +34,11 @@
         camera.transform.position.z = 4;
 
         // shader programs
+        shadowMappingProgram = new ShaderProgram(gl, dirShadowsVS, dirShadowsFS);
+        // shadowMappingProgram.SetActive();
+
         shaderProgram = new ShaderProgram(gl, dirShadowsVS, dirShadowsFS);
         //shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
-        // shadowMappingProgram.SetActive();
         shaderProgram.SetActive();
 
 
@@ -164,11 +166,12 @@
     };
 
     function render() {
-        shaderProgram.SetActive();
+        lights.RenderShadows(shadowMappingProgram, gameObjects, camera);
 
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        shaderProgram.SetActive();
+        //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         for (var i = 0; i < gameObjects.length; ++i) {
-            gameObjects[i].Draw(camera, this.gl.TRIANGLES);
+            //gameObjects[i].Draw(camera, this.gl.TRIANGLES);
         }
 
         // for (var i = 0; i < gizmos.length; ++i) {

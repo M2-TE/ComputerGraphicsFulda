@@ -71,6 +71,15 @@ class ObjGameObject extends GameObject {
         this.transform.Bind(this.shaderProgram);
         gl.drawElements(drawMode, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
     }
+
+    DrawShadowMesh(shaderProgram) {
+        shaderProgram.SetActive();
+
+        this.posBuffer.Bind();
+        this.indexBuffer.Bind();
+        this.transform.Bind(shaderProgram);
+        gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
+    }
 }
 
 class TexGameObject extends GameObject {
@@ -113,6 +122,15 @@ class TexGameObject extends GameObject {
         this.indexBuffer.Bind();
         this.transform.Bind(this.shaderProgram);
         gl.drawElements(drawMode, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
+    }
+
+    DrawShadowMesh(shaderProgram) {
+        shaderProgram.SetActive();
+
+        this.posBuffer.Bind();
+        this.indexBuffer.Bind();
+        this.transform.Bind(shaderProgram);
+        gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
     }
 }
 
@@ -333,6 +351,15 @@ class ColGameObject extends GameObject {
         this.transform.Bind(this.shaderProgram);
         gl.drawElements(drawMode, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
     }
+
+    DrawShadowMesh(shaderProgram) {
+        shaderProgram.SetActive();
+
+        this.posBuffer.Bind();
+        this.indexBuffer.Bind();
+        this.transform.Bind(shaderProgram);
+        gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
+    }
 }
 
 class Camera {
@@ -389,12 +416,42 @@ class LightsManager {
     }
 
     AddDirectionalLight(direction, color, intensity) {
+        var top = 10;
+        var bot = -top;
+        var rgt = 10;
+        var lft = -rgt;
+        var perspectiveMat = Matrix4x4.Orthographic(lft, rgt, top, bot, 0.001, 1000);
+
+        var transform = new Transform();
+        transform.rotEuler.x = degr(90);
+        transform.position.y = 3.0;
+
+        // TODO: create shadow map texture for light
+
         this.dirLights.push({
+            transform: transform,
+            perspectiveMat: perspectiveMat,
             direction: direction,
             color: color,
             intensity: intensity,
             enabled: true
         });
+    }
+
+    RenderShadows(shadowMappingProgram, gameObjects, camera) {
+        shadowMappingProgram.SetActive();
+
+        // for each light, render to its depth texture
+        for (var i = 0, length = this.dirLights.length; i < length; ++i) {
+            const light = this.dirLights[i];
+            light.transform.BindAsLight(shadowMappingProgram);
+            light.perspectiveMat.SetAsUniform(shadowMappingProgram, "perspMatVecs");
+            this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // clear current shadow map
+
+            for (var i = 0, length = gameObjects.length; i < length; ++i) {
+                gameObjects[i].DrawShadowMesh(shadowMappingProgram);
+            }
+        }
     }
 
     Bind(shaderProgram) {
