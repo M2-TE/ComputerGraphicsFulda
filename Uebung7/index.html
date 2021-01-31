@@ -35,10 +35,10 @@
 
         // shader programs
         shadowMappingProgram = new ShaderProgram(gl, dirShadowsVS, dirShadowsFS);
-        // shadowMappingProgram.SetActive();
+        shadowMappingProgram.SetActive();
 
-        shaderProgram = new ShaderProgram(gl, dirShadowsVS, dirShadowsFS);
-        //shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
+        //shaderProgram = new ShaderProgram(gl, dirShadowsVS, dirShadowsFS);
+        shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
         shaderProgram.SetActive();
 
 
@@ -155,23 +155,22 @@
         // lights.pointLights[0].position = camera.transform.position;
         lights.Bind(shaderProgram);
 
-        camera.transform.rotEuler.x = degr(90);
-        camera.transform.position.y = 3.0;
-        camera.transform.position.z = 0.0;
 
         // reenable for mouse movement
         const mouseSensitivity = 0.01;
         //camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
-        //camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
+        camera.transform.rotEuler.x = (mouse.y + canvas.width) * mouseSensitivity;
     };
 
     function render() {
         lights.RenderShadows(shadowMappingProgram, gameObjects, camera);
 
         shaderProgram.SetActive();
-        //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         for (var i = 0; i < gameObjects.length; ++i) {
-            //gameObjects[i].Draw(camera, this.gl.TRIANGLES);
+            gameObjects[i].Draw(camera, this.gl.TRIANGLES);
         }
 
         // for (var i = 0; i < gizmos.length; ++i) {

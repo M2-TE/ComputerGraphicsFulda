@@ -59,8 +59,6 @@ class ObjGameObject extends GameObject {
 
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-        var loc = this.shaderProgram.GetUnifLoc('texSampler');
-        this.gl.uniform1i(loc, 0);
 
         camera.Bind(this.shaderProgram);
         this.posBuffer.Bind();
@@ -113,8 +111,6 @@ class TexGameObject extends GameObject {
 
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-        var loc = this.shaderProgram.GetUnifLoc('texSampler');
-        this.gl.uniform1i(loc, 0);
 
         camera.Bind(this.shaderProgram);
         this.posBuffer.Bind();
@@ -366,12 +362,7 @@ class Camera {
     constructor(gl, fov, nearClip, farClip) {
         this.gl = gl;
         this.transform = new Transform();
-        //this.perspectiveMat = Matrix4x4.Perspective(fov, nearClip, farClip);
-        var top = 10;
-        var bot = -top;
-        var rgt = 10;
-        var lft = -rgt;
-        this.perspectiveMat = Matrix4x4.Orthographic(lft, rgt, top, bot, nearClip, farClip);
+        this.perspectiveMat = Matrix4x4.Perspective(fov, nearClip, farClip);
     }
 
 
@@ -426,10 +417,39 @@ class LightsManager {
         transform.rotEuler.x = degr(90);
         transform.position.y = 3.0;
 
-        // TODO: create shadow map texture for light
+        // create depth texture
+        var dim = 512;
+        var gl = this.gl;
+        var tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, dim, dim, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+
+        // create renderbuffer
+        var rb = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, dim, dim);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+
+        // create framebuffer
+        var fbo = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        // check for errors
+        var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if (status != gl.FRAMEBUFFER_COMPLETE) { console.log("Framebuffer error"); };
 
         this.dirLights.push({
             transform: transform,
+            shadowDim: dim,
+            fbo: fbo,
+            shadowmap: tex,
             perspectiveMat: perspectiveMat,
             direction: direction,
             color: color,
@@ -446,6 +466,10 @@ class LightsManager {
             const light = this.dirLights[i];
             light.transform.BindAsLight(shadowMappingProgram);
             light.perspectiveMat.SetAsUniform(shadowMappingProgram, "perspMatVecs");
+
+            this.gl.viewport(0, 0, light.shadowDim, light.shadowDim);
+            this.gl.bindFramebuffer(gl.FRAMEBUFFER, light.fbo);
+            //this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // clear current shadow map
 
             for (var i = 0, length = gameObjects.length; i < length; ++i) {
@@ -455,8 +479,13 @@ class LightsManager {
     }
 
     Bind(shaderProgram) {
+
         for (var i = 0, length = this.dirLights.length; i < length; ++i) {
             const light = this.dirLights[i];
+
+            // bind shadow texture
+            this.gl.activeTexture(this.gl.TEXTURE1);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, light.shadowmap);
 
             var directionLoc = shaderProgram.GetUnifLoc(`directionalLights[${i}].direction`);
             this.gl.uniform3f(directionLoc, light.direction.x, light.direction.y, light.direction.z);
@@ -480,6 +509,10 @@ class LightsManager {
             var intensityLoc = shaderProgram.GetUnifLoc(`pointLights[${i}].intensity`);
             this.gl.uniform1f(intensityLoc, light.enabled ? light.intensity : 0.0);
         }
+
+        // assign the number of tex samplers to use
+        var loc = shaderProgram.GetUnifLoc('texSampler');
+        this.gl.uniform1iv(loc, [0, 1]);
     }
 }
 

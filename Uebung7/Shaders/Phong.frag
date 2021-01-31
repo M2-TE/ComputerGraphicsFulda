@@ -16,7 +16,7 @@ phongFS = `
     const int dirLightCount = 1;
     const int pointLightCount = 2;
     
-    uniform sampler2D texSampler;
+    uniform sampler2D texSampler[1 + dirLightCount];
     uniform DirectionalLight directionalLights[dirLightCount];
     uniform PointLight pointLights[pointLightCount];
     uniform vec3 cameraPos;
@@ -70,7 +70,7 @@ phongFS = `
 
         vec3 color = vec3(0.0, 0.0, 0.0);
         if (vTexCoord.x > -1.0) {
-            color = texture2D(texSampler, vTexCoord).rgb;
+            color = texture2D(texSampler[0], vTexCoord).rgb;
         } else {
             color = vColor.rgb;
         }
@@ -86,5 +86,11 @@ phongFS = `
         }
 
         gl_FragColor = vec4(resultCol + ambient, vColor.a);
+
+        float u = gl_FragCoord.x / 400.0;
+        float v = 1.0 - gl_FragCoord.y / 400.0;
+        vec2 uv = vec2(u, v);
+        color = texture2D(texSampler[1], uv).rgb;
+        gl_FragColor = vec4(color, 1.0);
     }
 `;
