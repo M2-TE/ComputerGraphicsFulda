@@ -82,10 +82,14 @@ phongFS = `
 
     void main() {
         vec3 resultCol = vec3(0.0, 0.0, 0.0);
+        float resultAlpha = vColor.a;
 
         vec3 color = vec3(0.0, 0.0, 0.0);
         if (vTexCoord.x > -1.0) {
-            color = texture2D(texSampler[0], vTexCoord).rgb;
+            vec4 sample = texture2D(texSampler[0], vTexCoord);
+            color = sample.rgb;
+            resultAlpha = sample.a;
+            if(resultAlpha < 0.001) discard;
         } else {
             color = vColor.rgb;
         }
@@ -100,6 +104,6 @@ phongFS = `
             resultCol += CalcPointLightCol(pointLights[i], color);
         }
 
-        gl_FragColor = vec4(resultCol + ambient, vColor.a);
+        gl_FragColor = vec4(resultCol + ambient, resultAlpha);
     }
 `;
