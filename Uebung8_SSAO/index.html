@@ -13,6 +13,10 @@
 <script src="Shaders/Phong.frag"></script>
 <script src="Shaders/DirShadows.vert"></script>
 <script src="Shaders/DirShadows.frag"></script>
+<script src="Shaders/GBuffer/VertexBuffer.vert"></script>
+<script src="Shaders/GBuffer/VertexBuffer.frag"></script>
+<script src="Shaders/GBuffer/NormalBuffer.vert"></script>
+<script src="Shaders/GBuffer/NormalBuffer.frag"></script>
 
 <script src="node_modules/webgl-obj-loader/dist/webgl-obj-loader.js"></script>
 <script src="js/Math.js"></script>
@@ -33,11 +37,17 @@
         camera = new Camera(gl, 60, 0.001, 1000);
         camera.transform.position.z = 4;
 
+        // G-Buffer shader programs
+        vertexBufferProgram = new ShaderProgram(gl, vertexBufferVS, vertexBufferFS);
+        vertexBufferProgram.SetActive();
+
+        normalBufferProgram = new ShaderProgram(gl, normalBufferVS, normalBufferFS);
+        normalBufferProgram.SetActive();
+
         // shader programs
         shadowMappingProgram = new ShaderProgram(gl, dirShadowsVS, dirShadowsFS);
         shadowMappingProgram.SetActive();
 
-        //shaderProgram = new ShaderProgram(gl, dirShadowsVS, dirShadowsFS);
         shaderProgram = new ShaderProgram(gl, phongVS, phongFS);
         shaderProgram.SetActive();
 
@@ -58,7 +68,6 @@
 
         // viewport
         gl.viewport(0, 0, canvas.width, canvas.height);
-
 
         // set ambient color
         new Vec3(0.1, 0.1, 0.1).SetAsUniform(shaderProgram, "ambient");
@@ -121,7 +130,7 @@
         {
             var goN = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.8, 0.2, 0.2));
             goN.transform.position = new Vec3(0.0, 0.0, -5.0);
-            goN.transform.scale = new Vec3(10.0, 10.0, 0.1);
+            goN.transform.scale = new Vec3(10.0, 10.0, 1.0);
             gameObjects.push(goN);
 
             var goE = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.8, 0.2, 0.2));
@@ -142,10 +151,6 @@
     };
 
     function update() {
-        gameObjects[0].transform.rotEuler.y += deltaTime;
-        // lights.pointLights[0].position = camera.transform.position;
-        lights.Bind(shaderProgram);
-
         // reenable for mouse movement
         const mouseSensitivity = 0.01;
         camera.transform.rotEuler.y = (mouse.x + canvas.height) * mouseSensitivity;
@@ -153,15 +158,13 @@
     };
 
     function render() {
-        lights.RenderShadows(shadowMappingProgram, gameObjects, camera);
-
         shaderProgram.SetActive();
-        gl.enable(gl.CULL_FACE);
         this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
         for (var i = 0; i < gameObjects.length; ++i) {
-            gameObjects[i].Draw(camera, this.gl.TRIANGLES);
+            gameObjects[i].Draw(camera, this.gl.TRIANGLES, normalBufferProgram);
         }
 
     };

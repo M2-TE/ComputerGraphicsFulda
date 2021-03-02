@@ -335,16 +335,20 @@ class ColGameObject extends GameObject {
         return go;
     }
 
-    Draw(camera, drawMode) {
-        this.shaderProgram.SetActive();
+    Draw(camera, drawMode, shaderProgram) {
+        if (shaderProgram == null) {
+            shaderProgram = this.shaderProgram;
+        }
 
-        camera.Bind(this.shaderProgram);
+        shaderProgram.SetActive();
+
+        camera.Bind(shaderProgram);
         this.posBuffer.Bind();
         this.colBuffer.Bind();
         this.normBuffer.Bind();
         this.texCoordBuffer.Bind();
         this.indexBuffer.Bind();
-        this.transform.Bind(this.shaderProgram);
+        this.transform.Bind(shaderProgram);
         gl.drawElements(drawMode, this.indexCount, this.gl.UNSIGNED_SHORT, 0);
     }
 
