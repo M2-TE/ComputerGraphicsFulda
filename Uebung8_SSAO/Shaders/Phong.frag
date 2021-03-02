@@ -24,6 +24,12 @@ phongFS = `
     uniform vec3 cameraPos;
     uniform vec3 ambient;
 
+    // ssao
+    uniform sampler2D vertexBuffer;
+    uniform sampler2D normalBuffer;
+    uniform sampler2D noise;
+    uniform sampler2D etc;
+
     varying vec3 vWorldPos;
     varying vec3 vNormal;
     varying vec4 vColor;
@@ -105,5 +111,9 @@ phongFS = `
         }
 
         gl_FragColor = vec4(resultCol + ambient, resultAlpha);
+
+        // DEBUG: testing if i can write to vert/norm buffers
+        vec4 test = texture2D(normalBuffer, gl_FragCoord.xy / 400.0);
+        gl_FragColor = test;
     }
 `;

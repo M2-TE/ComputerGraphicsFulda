@@ -476,7 +476,6 @@ class LightsManager {
 
             this.gl.viewport(0, 0, light.shadowDim, light.shadowDim);
             this.gl.bindFramebuffer(gl.FRAMEBUFFER, light.fbo);
-            //this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // clear current shadow map
 
             for (var i = 0, length = gameObjects.length; i < length; ++i) {

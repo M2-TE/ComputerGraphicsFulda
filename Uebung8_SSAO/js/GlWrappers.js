@@ -121,3 +121,63 @@ function loadTexture(gl, path) {
 
     return texture;
 }
+
+
+class Texture2D {
+    constructor(gl, dim, pixelArray) {
+
+        this.gl = gl;
+        this.dim = dim;
+
+        // create texture
+        this.tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, dim, dim, 0, gl.RGBA, gl.FLOAT, pixelArray);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+
+        // create renderbuffer
+        this.rb = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, this.rb);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, dim, dim);
+        gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+
+        // create framebuffer
+        this.fbo = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tex, 0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.rb);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        // check for errors
+        var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        if (status != gl.FRAMEBUFFER_COMPLETE) { console.log("Framebuffer error"); };
+    }
+
+    BindAsFBO() {
+        this.gl.viewport(0, 0, this.dim, this.dim);
+        this.gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+        this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    }
+
+    BindAsSampler(program, uniformName, textureUnitOffset) {
+        var loc = program.GetUnifLoc(uniformName);
+        var textureUnit = textureUnitOffset + 5;
+
+        this.gl.activeTexture(this.gl.TEXTURE0 + textureUnit);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.tex);
+
+        this.gl.uniform1i(loc, textureUnit);
+    }
+
+    UnbindAsSampler(program, uniformName, textureUnitOffset) {
+        var loc = program.GetUnifLoc(uniformName);
+        var textureUnit = textureUnitOffset + 5;
+
+        this.gl.activeTexture(this.gl.TEXTURE0 + textureUnit);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+    }
+}
