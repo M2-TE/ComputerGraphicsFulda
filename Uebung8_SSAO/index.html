@@ -66,7 +66,7 @@
         // create lights
         lights = new LightsManager(gl);
         lights.AddDirectionalLight(new Vec3(0.0, -5.0, 0.0), new Vec3(1.0, 1.0, 1.0), 0.5);
-        // lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(1.0, 1.0, 1.0), 1.0);
+        lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(1.0, 1.0, 1.0), 5.0);
         // lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(0.9, .2, .2), 1.0);
         lights.Bind(shaderProgram);
 
@@ -109,39 +109,6 @@
         * -> dynamic buffer usage
         */
 
-        // obj
-        {
-            fetch('objs/Mug.obj')
-                .then(response => response.text())
-                .then((data) => {
-                    var mesh = new OBJ.Mesh(data);
-                    var go = new ObjGameObject(gl, shaderProgram);
-
-                    var texture = loadTexture(gl, "objs/Mug_BaseColor.png");
-                    go.PassMeshData(mesh, texture);
-                    go.transform.position = new Vec3(0.0, -2.0, 0.0);
-                    go.transform.scale = new Vec3(.5, .5, .5);
-                    gameObjects.push(go);
-                });
-        }
-
-        // cube
-        {
-            var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.9, 0.2, 0.2));
-            go.transform.position = new Vec3(1.0, 1.0, 0.0);
-            go.transform.rotEuler = new Vec3(1.0, 0.0, 0.0);
-            gameObjects.push(go);
-        }
-
-        // sphere
-        {
-            var go = ColGameObject.Sphere(gl, shaderProgram, 8, 8, new Vec3(0.9, 0.2, 0.2));
-            go.transform.position = new Vec3(-1.0, 1.0, 0.0);
-            go.transform.rotEuler = new Vec3(0.0, 0.0, 0.0);
-            go.transform.scale = new Vec3(0.5, 0.5, 0.5);
-            gameObjects.push(go);
-        }
-
         // ground
         {
             var go = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.9, 0.2, 0.2));
@@ -150,115 +117,27 @@
             gameObjects.push(go);
         }
 
-        // transparent tex thing
+        // walls
         {
-            var go = new ObjGameObject(gl, shaderProgram);
-            var mesh = {};
-            mesh.textures = [];
+            var goN = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.8, 0.2, 0.2));
+            goN.transform.position = new Vec3(0.0, 0.0, -5.0);
+            goN.transform.scale = new Vec3(10.0, 10.0, 0.1);
+            gameObjects.push(goN);
 
-            // unit values
-            const unit = 0.5;
-            const pnit = -0.5;
+            var goE = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.8, 0.2, 0.2));
+            goE.transform.position = new Vec3(5.0, 0.0, 0.0);
+            goE.transform.scale = new Vec3(0.1, 10.0, 10.0);
+            gameObjects.push(goE);
 
-            const zero = 0.0;
-            const one = 1.0;
+            var goS = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.8, 0.2, 0.2));
+            goS.transform.position = new Vec3(0.0, 0.0, 5.0);
+            goS.transform.scale = new Vec3(10.0, 10.0, 0.1);
+            gameObjects.push(goS);
 
-            mesh.vertices = [
-                // top
-                pnit, unit, unit, // 0
-                unit, unit, unit, // 1
-                pnit, unit, pnit, // 2
-                unit, unit, pnit, // 3
-
-                // bot
-                pnit, pnit, unit, // 4
-                unit, pnit, unit, // 5
-                pnit, pnit, pnit, // 6
-                unit, pnit, pnit, // 7
-
-                // rgt
-                unit, unit, unit,
-                unit, pnit, unit,
-                unit, unit, pnit,
-                unit, pnit, pnit,
-
-                // lft
-                pnit, pnit, unit,
-                pnit, unit, unit,
-                pnit, pnit, pnit,
-                pnit, unit, pnit,
-
-                // fwd
-                pnit, pnit, unit,
-                unit, pnit, unit,
-                pnit, unit, unit,
-                unit, unit, unit,
-
-                // bwd
-                pnit, unit, pnit,
-                unit, unit, pnit,
-                pnit, pnit, pnit,
-                unit, pnit, pnit,
-            ];
-
-            mesh.vertexNormals = [
-                // top
-                zero, one, zero,
-                zero, one, zero,
-                zero, one, zero,
-                zero, one, zero,
-
-                // bot
-                zero, -one, zero,
-                zero, -one, zero,
-                zero, -one, zero,
-                zero, -one, zero,
-
-                // rgt
-                one, zero, zero,
-                one, zero, zero,
-                one, zero, zero,
-                one, zero, zero,
-
-                // lft
-                -one, zero, zero,
-                -one, zero, zero,
-                -one, zero, zero,
-                -one, zero, zero,
-
-                // fwd
-                zero, zero, one,
-                zero, zero, one,
-                zero, zero, one,
-                zero, zero, one,
-
-                // bwd
-                zero, zero, -one,
-                zero, zero, -one,
-                zero, zero, -one,
-                zero, zero, -one,
-            ];
-
-            mesh.textures = [
-                0, 1, 1, 1, 0, 0, 1, 0,
-                0, 1, 1, 1, 0, 0, 1, 0,
-                0, 1, 1, 1, 0, 0, 1, 0,
-                0, 1, 1, 1, 0, 0, 1, 0,
-                0, 1, 1, 1, 0, 0, 1, 0,
-                0, 1, 1, 1, 0, 0, 1, 0,
-            ];
-
-            mesh.indices = [
-                0, 1, 2, 1, 3, 2, // top
-                4, 5, 6, 5, 7, 6, // bot
-                8, 9, 10, 9, 11, 10, // rgt
-                12, 13, 14, 13, 15, 14, // lft
-                16, 17, 18, 17, 19, 18, // fwd
-                20, 21, 22, 21, 23, 22 // bwd
-            ];
-
-            go.PassMeshData(mesh, loadTexture(gl, "Textures/ClockFace.png"));
-            transparentGameObjects.push(go);
+            var goW = ColGameObject.Cube(gl, shaderProgram, new Vec3(0.8, 0.2, 0.2));
+            goW.transform.position = new Vec3(-5.0, 0.0, 0.0);
+            goW.transform.scale = new Vec3(0.1, 10.0, 10.0);
+            gameObjects.push(goW);
         }
     };
 
@@ -285,15 +164,6 @@
             gameObjects[i].Draw(camera, this.gl.TRIANGLES);
         }
 
-        // draw transparent objects and disable their backface culling
-        gl.disable(gl.CULL_FACE);
-        for (var i = 0; i < transparentGameObjects.length; ++i) {
-            transparentGameObjects[i].Draw(camera, this.gl.TRIANGLES);
-        }
-
-        // for (var i = 0; i < gizmos.length; ++i) {
-        //     gizmos[i].Draw(camera, this.gl.LINES);
-        // }
     };
 
     function shutdown() {
