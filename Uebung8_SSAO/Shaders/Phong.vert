@@ -14,6 +14,8 @@ phongVS = `
     varying vec3 vNormal;
     varying vec4 vColor;
     varying vec2 vTexCoord;
+    varying mat4 perspMat;
+    varying mat4 viewMat;
 
     void main() {
         mat4 modelMat = mat4(
@@ -22,13 +24,13 @@ phongVS = `
             modelMatVecs[2],
             modelMatVecs[3]);
 
-        mat4 viewMat = mat4(
+        viewMat = mat4(
             viewMatVecs[0],
             viewMatVecs[1],
             viewMatVecs[2],
             viewMatVecs[3]);
 
-        mat4 perspMat = mat4(
+        perspMat = mat4(
             perspMatVecs[0],
             perspMatVecs[1],
             perspMatVecs[2],

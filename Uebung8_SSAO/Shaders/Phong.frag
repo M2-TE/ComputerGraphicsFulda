@@ -28,12 +28,20 @@ phongFS = `
     uniform sampler2D vertexBuffer;
     uniform sampler2D normalBuffer;
     uniform sampler2D sampleNoise;
-    uniform vec3 sampleOffsets[8];
+    const float ssaoRadius = 1.5;
+    const float ssaoBias = 0.025;
+    const int numSamples = 64;
+    uniform vec3 sampleOffsets[numSamples];
+    const vec2 screenDim = vec2(400.0, 400.0);
+    const float noiseTexDim = 4.0;
+    const vec2 noiseSamplerScale = vec2(screenDim.x / noiseTexDim, screenDim.y / noiseTexDim); 
 
     varying vec3 vWorldPos;
     varying vec3 vNormal;
     varying vec4 vColor;
     varying vec2 vTexCoord;
+    varying mat4 perspMat;
+    varying mat4 viewMat;
 
     vec3 CalcDirectionalLightCol(DirectionalLight light, vec3 color) 
     {
@@ -110,11 +118,55 @@ phongFS = `
             resultCol += CalcPointLightCol(pointLights[i], color);
         }
 
-        gl_FragColor = vec4(resultCol + ambient, resultAlpha);
 
-        // DEBUG: testing if i can write to vert/norm buffers
-        vec4 sampledNoise = texture2D(sampleNoise, gl_FragCoord.xy);
-        vec4 test = texture2D(normalBuffer, gl_FragCoord.xy / 400.0);
-        gl_FragColor = test;
+
+        // SSAO:
+        vec3 worldPos = vWorldPos;
+        //vec3 worldPos = texture2D(vertexBuffer, gl_FragCoord.xy / 400.0).xyz;
+        vec3 normal = mat3(viewMat) * vNormal; // needs to be in view space
+        //vec3 normal = texture2D(normalBuffer, gl_FragCoord.xy / 400.0).xyz;
+        vec3 noiseVec = texture2D(sampleNoise, gl_FragCoord.xy).xyz;
+
+        // creating TBN matrix:
+        vec3 tangent = normalize(noiseVec - normal * dot(noiseVec, normal));
+        vec3 bitangent = cross(normal, tangent);
+        mat3 TBN = mat3(tangent, bitangent, normal);
+
+        // calculate occlusion value
+        float occlusion = 0.0;
+        for(int i = 0; i < numSamples; ++i)
+        {
+            // convert offset sample from tangent to world space
+            vec4 samplePos = vec4(worldPos + (TBN * sampleOffsets[i]) * ssaoRadius, 1.0);
+            
+            // now convert to view space
+            samplePos = viewMat * samplePos;
+
+            // and lastly screen space with perspective divide and normalization
+            vec4 offset = perspMat * samplePos;
+            offset.xyz /= offset.w;
+            offset.xyz = offset.xyz * 0.5 + 0.5;
+
+            // use offset to read worldPos texture
+            vec4 realPos = texture2D(vertexBuffer, offset.xy);
+            // transform to view space
+            realPos = viewMat * realPos;
+
+            occlusion += realPos.z >= samplePos.z + ssaoBias ? 1.0 : 0.0;
+        }
+        occlusion /= float(numSamples);
+        // occlusion = pow(occlusion, 1.0);
+        // occlusion = contrast * (occlusion - 0.5) + 0.5;
+
+        gl_FragColor = vec4(1.0 - vec3(occlusion), resultAlpha);
+
+        // gl_FragColor = vec4(vColor.xyz * (1.0 - occlusion), resultAlpha);
+
+        // gl_FragColor = vec4((resultCol + ambient) * (1.0 - occlusion), resultAlpha);
+
+        // // // DEBUG: testing if i can write to vert/norm buffers
+        // vec4 sampledNoise = texture2D(sampleNoise, gl_FragCoord.xy / 4.0);
+        // vec4 test = texture2D(normalBuffer, gl_FragCoord.xy / 400.0);
+        // gl_FragColor = vec4(vec3(sampledNoise.x), 1.0);
     }
 `;

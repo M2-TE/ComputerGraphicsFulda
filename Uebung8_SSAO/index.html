@@ -36,7 +36,7 @@
         gl.getExtension('EXT_color_buffer_float');
         gl.getExtension('EXT_float_blend');
 
-        camera = new Camera(gl, 60, 0.001, 1000);
+        camera = new Camera(gl, 60, 0.1, 1000);
         camera.transform.position.z = 4;
 
         // G-Buffer shader programs
@@ -87,7 +87,7 @@
         // ssao precalc buffers (sample offset + rotational noise)
         {
             sampleArr = [];
-            const numSamples = 8;
+            const numSamples = 64;
             // generate sample kernel within hemisphere using z as dir
             for (var i = 0; i < numSamples; ++i) {
                 var vec3 = new Vec3(
