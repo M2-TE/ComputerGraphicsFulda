@@ -121,11 +121,11 @@ phongFS = `
 
 
         // SSAO:
-        vec3 worldPos = vWorldPos;
-        //vec3 worldPos = texture2D(vertexBuffer, gl_FragCoord.xy / 400.0).xyz;
+        vec3 viewPos =  (viewMat * vec4(vWorldPos, 1.0)).xyz;
+        //vec3 viewPos = texture2D(vertexBuffer, gl_FragCoord.xy / 400.0).xyz;
         vec3 normal = mat3(viewMat) * vNormal; // needs to be in view space
         //vec3 normal = texture2D(normalBuffer, gl_FragCoord.xy / 400.0).xyz;
-        vec3 noiseVec = texture2D(sampleNoise, gl_FragCoord.xy).xyz;
+        vec3 noiseVec = texture2D(sampleNoise, gl_FragCoord.xy * 1.0).xyz;
 
         // creating TBN matrix:
         vec3 tangent = normalize(noiseVec - normal * dot(noiseVec, normal));
@@ -136,11 +136,9 @@ phongFS = `
         float occlusion = 0.0;
         for(int i = 0; i < numSamples; ++i)
         {
-            // convert offset sample from tangent to world space
-            vec4 samplePos = vec4(worldPos + (TBN * sampleOffsets[i]) * ssaoRadius, 1.0);
+            // convert offset sample from tangent to view space
+            vec4 samplePos = vec4(viewPos + (TBN * sampleOffsets[i]) * ssaoRadius, 1.0);
             
-            // now convert to view space
-            samplePos = viewMat * samplePos;
 
             // and lastly screen space with perspective divide and normalization
             vec4 offset = perspMat * samplePos;
@@ -152,21 +150,11 @@ phongFS = `
             // transform to view space
             realPos = viewMat * realPos;
 
-            occlusion += realPos.z >= samplePos.z + ssaoBias ? 1.0 : 0.0;
+            float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(viewPos.z - realPos.z));
+            occlusion += realPos.z >= samplePos.z + ssaoBias ? rangeCheck : 0.0;
         }
         occlusion /= float(numSamples);
-        // occlusion = pow(occlusion, 1.0);
-        // occlusion = contrast * (occlusion - 0.5) + 0.5;
-
-        gl_FragColor = vec4(1.0 - vec3(occlusion), resultAlpha);
-
-        // gl_FragColor = vec4(vColor.xyz * (1.0 - occlusion), resultAlpha);
-
-        // gl_FragColor = vec4((resultCol + ambient) * (1.0 - occlusion), resultAlpha);
-
-        // // // DEBUG: testing if i can write to vert/norm buffers
-        // vec4 sampledNoise = texture2D(sampleNoise, gl_FragCoord.xy / 4.0);
-        // vec4 test = texture2D(normalBuffer, gl_FragCoord.xy / 400.0);
-        // gl_FragColor = vec4(vec3(sampledNoise.x), 1.0);
+        
+        gl_FragColor = vec4((resultCol + ambient) * (1.0 - occlusion), resultAlpha);
     }
 `;

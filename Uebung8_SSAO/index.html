@@ -96,6 +96,11 @@
                     Math.random()
                 );
 
+                var magn = Math.sqrt(vec3.x * vec3.x + vec3.y * vec3.y + vec3.z * vec3.z);
+                vec3.x /= magn;
+                vec3.y /= magn;
+                vec3.z /= magn;
+
                 const scale = Math.random();
                 vec3.x *= scale;
                 vec3.y *= scale;
