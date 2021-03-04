@@ -27,8 +27,8 @@ phongFS = `
     // ssao
     uniform sampler2D vertexBuffer;
     uniform sampler2D normalBuffer;
-    uniform sampler2D noise;
-    uniform sampler2D etc;
+    uniform sampler2D sampleNoise;
+    uniform vec3 sampleOffsets[8];
 
     varying vec3 vWorldPos;
     varying vec3 vNormal;
@@ -113,6 +113,7 @@ phongFS = `
         gl_FragColor = vec4(resultCol + ambient, resultAlpha);
 
         // DEBUG: testing if i can write to vert/norm buffers
+        vec4 sampledNoise = texture2D(sampleNoise, gl_FragCoord.xy);
         vec4 test = texture2D(normalBuffer, gl_FragCoord.xy / 400.0);
         gl_FragColor = test;
     }

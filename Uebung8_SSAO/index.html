@@ -84,6 +84,53 @@
         lights.AddPointLight(new Vec3(0.0, 0.0, 0.0), new Vec3(1.0, 1.0, 1.0), 10.0);
         lights.Bind(shaderProgram);
 
+        // ssao precalc buffers (sample offset + rotational noise)
+        {
+            sampleArr = [];
+            const numSamples = 8;
+            // generate sample kernel within hemisphere using z as dir
+            for (var i = 0; i < numSamples; ++i) {
+                var vec3 = new Vec3(
+                    Math.random() * 2.0 - 1.0,
+                    Math.random() * 2.0 - 1.0,
+                    Math.random()
+                );
+
+                const scale = Math.random();
+                vec3.x *= scale;
+                vec3.y *= scale;
+                vec3.z *= scale;
+
+                // move samples closer to origin to focus on sampling direct surroundings
+                const lerpScale = i / numSamples;
+                const lerpVal = Lerp(0.1, 1.0, lerpScale * lerpScale);
+                vec3.x *= lerpVal;
+                vec3.y *= lerpVal;
+                vec3.z *= lerpVal;
+
+                sampleArr.push(vec3.x);
+                sampleArr.push(vec3.y);
+                sampleArr.push(vec3.z);
+            }
+
+            var arr32 = new Float32Array(sampleArr);
+            var loc = shaderProgram.GetUnifLoc('sampleOffsets');
+            gl.uniform3fv(loc, arr32);
+
+            // create noise to randomly rotate kernel around fragment
+            const dim = 4;
+            const numNoiseSamples = dim * dim; // 4x4 tiled texture
+            var noise = [];
+            for (var i = 0; i < numNoiseSamples; ++i) {
+                noise.push(Math.random() * 2.0 - 1.0);
+                noise.push(Math.random() * 2.0 - 1.0);
+                noise.push(0.0);
+                noise.push(0.0); // filler
+            }
+            var texData = new Float32Array(noise);
+            noiseTex = new Texture2D(gl, dim, gl.REPEAT, texData);
+        }
+
         mouse = new Mouse();
         canvas.addEventListener('mousemove', function (evt) {
             mouse.Update(evt.clientX, evt.clientY);
@@ -188,6 +235,7 @@
         this.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         vertexBufferRT.BindAsSampler(shaderProgram, 'vertexBuffer', 0);
         normalBufferRT.BindAsSampler(shaderProgram, 'normalBuffer', 1);
+        noiseTex.BindAsSampler(shaderProgram, 'sampleNoise', 2);
 
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

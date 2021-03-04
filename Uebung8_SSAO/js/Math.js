@@ -163,3 +163,7 @@ class Vec3 {
         return new Vec3(a.x + b.x, a.y + b.y, a.z + b.z);
     }
 }
+
+function Lerp(startVal, endVal, amount) {
+    return startVal + amount * (endVal - startVal);
+}
